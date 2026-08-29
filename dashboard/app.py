@@ -49,9 +49,109 @@ st.markdown(
       [data-testid="stSidebar"] {
         border-right: 1px solid var(--cp-border);
       }
+      [data-testid="stSidebar"] > div:first-child {
+        background:
+          radial-gradient(circle at 20% 0%, rgba(99,88,232,.09), transparent 28%),
+          rgba(128,128,128,.018);
+      }
+      [data-testid="stSidebarUserContent"] {padding-top: 1.2rem;}
       [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
         line-height: 1.45;
       }
+      .cp-sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: .72rem;
+        margin: .05rem 0 .7rem 0;
+      }
+      .cp-sidebar-mark {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 2.2rem;
+        height: 2.2rem;
+        border: 1px solid rgba(99,88,232,.34);
+        border-radius: .7rem;
+        background: rgba(99,88,232,.1);
+        color: #6558e8;
+        font-size: .74rem;
+        font-weight: 850;
+        letter-spacing: -.02em;
+      }
+      .cp-sidebar-mark::after {
+        content: "";
+        position: absolute;
+        width: .42rem;
+        height: .42rem;
+        right: -.08rem;
+        top: -.08rem;
+        border: 2px solid var(--secondary-background-color);
+        border-radius: 50%;
+        background: var(--cp-green);
+      }
+      .cp-sidebar-product {font-size: .92rem; font-weight: 790; line-height: 1.1;}
+      .cp-sidebar-mode {font-size: .67rem; opacity: .58; margin-top: .18rem; letter-spacing: .035em;}
+      .cp-sidebar-intro {
+        border: 1px solid var(--cp-border);
+        border-radius: .72rem;
+        padding: .62rem .68rem;
+        margin: .25rem 0 1.05rem 0;
+        font-size: .68rem;
+        line-height: 1.45;
+        opacity: .72;
+      }
+      .cp-sidebar-nav-label {margin: 0 0 .36rem .14rem;}
+      [data-testid="stSidebar"] [data-testid="stRadio"] > label {display: none;}
+      [data-testid="stSidebar"] div[role="radiogroup"] {gap: .3rem;}
+      [data-testid="stSidebar"] div[role="radiogroup"] label {
+        min-height: 2.65rem;
+        border: 1px solid transparent;
+        border-radius: .68rem;
+        padding: .48rem .62rem;
+        transition: background-color .15s ease, border-color .15s ease;
+      }
+      [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+        border-color: var(--cp-border);
+        background: rgba(128,128,128,.055);
+      }
+      [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+        border-color: rgba(99,88,232,.25);
+        background: rgba(99,88,232,.105);
+        color: #6558e8;
+      }
+      [data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child {
+        display: none;
+      }
+      [data-testid="stSidebar"] div[role="radiogroup"] label p {
+        font-size: .77rem;
+        font-weight: 690;
+        letter-spacing: .005em;
+      }
+      .cp-sidebar-route {
+        border: 1px solid var(--cp-border);
+        border-radius: .78rem;
+        padding: .72rem;
+        margin-top: .55rem;
+        background: rgba(128,128,128,.025);
+      }
+      .cp-sidebar-route-nodes {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr;
+        align-items: center;
+        gap: .22rem;
+        margin-top: .5rem;
+      }
+      .cp-sidebar-node {
+        text-align: center;
+        border: 1px solid var(--cp-border);
+        border-radius: .46rem;
+        padding: .32rem .2rem;
+        font-size: .56rem;
+        font-weight: 780;
+        letter-spacing: .045em;
+      }
+      .cp-sidebar-chevron {font-size: .7rem; opacity: .38;}
+      .cp-sidebar-route-copy {font-size: .63rem; line-height: 1.4; opacity: .6; margin-top: .5rem;}
       [data-testid="stMetric"] {
         background: rgba(99, 88, 232, .045);
         border: 1px solid rgba(99, 88, 232, .14);
@@ -370,24 +470,62 @@ st.markdown(
       .cp-budget-fill.cp-over {background: linear-gradient(90deg, #d97706, #dc2626);}
       .cp-budget-caption {font-size: .66rem; opacity: .62;}
       .cp-check-head {display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-top: .2rem;}
-      .cp-check-counts {display: flex; flex-wrap: wrap; gap: .28rem; justify-content: flex-end;}
-      .cp-count-pill {border: 1px solid var(--cp-border); border-radius: 999px; padding: .16rem .42rem; font-size: .64rem; font-weight: 720;}
+      .cp-check-counts {display: flex; flex-wrap: wrap; gap: .65rem; justify-content: flex-end;}
+      .cp-count-stat {font-size: .65rem; opacity: .64; white-space: nowrap;}
+      .cp-count-stat strong {font-size: .76rem; opacity: 1; margin-right: .12rem;}
       .cp-check-grid {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin: .55rem 0 .95rem 0;}
       .cp-check {
         min-width: 0;
         border: 1px solid var(--cp-border);
-        border-left-width: 3px;
-        border-radius: .72rem;
-        padding: .62rem .68rem;
-        background: rgba(128,128,128,.022);
+        border-radius: .78rem;
+        padding: .68rem .72rem;
+        background: rgba(128,128,128,.018);
       }
-      .cp-check[data-status="PASS"] {border-left-color: var(--cp-green);}
-      .cp-check[data-status="FAIL"] {border-left-color: var(--cp-red); background: rgba(220,38,38,.035);}
-      .cp-check[data-status="UNKNOWN"] {border-left-color: var(--cp-amber); background: rgba(217,119,6,.035);}
-      .cp-check[data-status="NOT_APPLICABLE"] {border-left-color: #64748b; opacity: .62;}
+      .cp-check-top {display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem;}
       .cp-check-title {font-size: .76rem; font-weight: 750; line-height: 1.28;}
-      .cp-check-meta {display: flex; justify-content: space-between; gap: .5rem; margin-top: .22rem; font-size: .64rem; opacity: .68;}
-      .cp-check-reason {font-size: .68rem; line-height: 1.4; margin-top: .38rem; opacity: .76;}
+      .cp-check-status {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: .22rem;
+        border-radius: .4rem;
+        padding: .16rem .3rem;
+        font-size: .56rem;
+        font-weight: 820;
+        letter-spacing: .045em;
+      }
+      .cp-status-mark {
+        display: inline-grid;
+        place-items: center;
+        width: .82rem;
+        height: .82rem;
+        border-radius: 50%;
+        font-size: .58rem;
+        font-weight: 900;
+      }
+      .cp-check[data-status="PASS"] .cp-check-status {color: var(--cp-green); background: rgba(5,150,105,.09);}
+      .cp-check[data-status="FAIL"] .cp-check-status {color: var(--cp-red); background: rgba(220,38,38,.085);}
+      .cp-check[data-status="UNKNOWN"] .cp-check-status {color: var(--cp-amber); background: rgba(217,119,6,.09);}
+      .cp-check[data-status="NOT_APPLICABLE"] .cp-check-status {color: #64748b; background: rgba(100,116,139,.09);}
+      .cp-check-metrics {
+        display: grid;
+        grid-template-columns: .72fr 1.28fr;
+        gap: .45rem;
+        margin-top: .55rem;
+        padding-top: .48rem;
+        border-top: 1px solid rgba(128,128,128,.12);
+      }
+      .cp-check-metric-label {display: block; font-size: .55rem; text-transform: uppercase; letter-spacing: .06em; opacity: .5;}
+      .cp-check-metric-value {display: block; margin-top: .12rem; font-size: .64rem; font-weight: 680; overflow-wrap: anywhere;}
+      .cp-check-reason {
+        border-top: 1px solid rgba(128,128,128,.12);
+        font-size: .67rem;
+        line-height: 1.42;
+        margin-top: .48rem;
+        padding-top: .42rem;
+        opacity: .76;
+      }
+      .cp-check-reason-label {font-size: .54rem; font-weight: 800; letter-spacing: .06em; opacity: .62; margin-right: .28rem;}
       .cp-good {background: rgba(16,185,129,.11); border: 1px solid rgba(16,185,129,.32);}
       .cp-edit {background: rgba(14,165,233,.11); border: 1px solid rgba(14,165,233,.32);}
       .cp-warn {background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.34);}
@@ -576,10 +714,10 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
         '<div class="cp-check-head"><div><div class="cp-label">Checker verdicts</div>'
         '<div class="cp-section-title">What passed—and what did not</div></div>'
         '<div class="cp-check-counts">'
-        f'<span class="cp-count-pill">{counts["PASS"]} passed</span>'
-        f'<span class="cp-count-pill">{counts["FAIL"]} failed</span>'
-        f'<span class="cp-count-pill">{counts["UNKNOWN"]} unknown</span>'
-        f'<span class="cp-count-pill">{counts["NOT_APPLICABLE"]} n/a</span>'
+        f'<span class="cp-count-stat"><strong>{counts["PASS"]}</strong> passed</span>'
+        f'<span class="cp-count-stat"><strong>{counts["FAIL"]}</strong> failed</span>'
+        f'<span class="cp-count-stat"><strong>{counts["UNKNOWN"]}</strong> unknown</span>'
+        f'<span class="cp-count-stat"><strong>{counts["NOT_APPLICABLE"]}</strong> n/a</span>'
         "</div></div>",
         unsafe_allow_html=True,
     )
@@ -588,6 +726,12 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
         return
 
     cards: list[str] = []
+    status_marks = {
+        "PASS": "✓",
+        "FAIL": "×",
+        "UNKNOWN": "?",
+        "NOT_APPLICABLE": "–",
+    }
     for check in checks:
         status = str(check.get("status", "UNKNOWN")).upper()
         if status not in counts:
@@ -597,13 +741,23 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
         latency = float(check.get("latency_ms", 0))
         reason = ""
         if status in {"FAIL", "UNKNOWN"} and check.get("reason"):
-            reason = f'<div class="cp-check-reason">{html.escape(str(check["reason"]))}</div>'
+            reason = (
+                '<div class="cp-check-reason"><span class="cp-check-reason-label">'
+                "FINDING</span>"
+                f"{html.escape(str(check['reason']))}</div>"
+            )
         cards.append(
             f'<div class="cp-check" data-status="{html.escape(status)}">'
+            '<div class="cp-check-top">'
             f'<div class="cp-check-title">{html.escape(name)}</div>'
-            '<div class="cp-check-meta">'
-            f"<span>{html.escape(status.replace('_', ' '))}</span>"
-            f"<span>{latency:.1f} ms · {html.escape(evidence)}</span></div>"
+            '<div class="cp-check-status">'
+            f'<span class="cp-status-mark">{status_marks[status]}</span>'
+            f"{html.escape(status.replace('_', ' '))}</div></div>"
+            '<div class="cp-check-metrics">'
+            '<div><span class="cp-check-metric-label">Latency</span>'
+            f'<span class="cp-check-metric-value">{latency:.1f} ms</span></div>'
+            '<div><span class="cp-check-metric-label">Evidence state</span>'
+            f'<span class="cp-check-metric-value">{html.escape(evidence)}</span></div></div>'
             f"{reason}</div>"
         )
     st.markdown(
@@ -804,24 +958,55 @@ def render_result(
             st.json(result, expanded=False)
 
 
+navigation_labels = {
+    "Run scenario": "01   Run scenario",
+    "Audit trail": "02   Audit trail",
+    "Policies": "03   Policies",
+    "Metrics": "04   Metrics",
+    "Feedback": "05   Feedback",
+}
+
 with st.sidebar:
     st.markdown(
-        '<div class="cp-label">ControlPlane.ai</div>'
-        '<div style="font-size:1.2rem;font-weight:780;margin:.16rem 0 .1rem 0;">'
-        "Decision console</div>",
+        '<div class="cp-sidebar-brand">'
+        '<div class="cp-sidebar-mark">CP</div><div>'
+        '<div class="cp-sidebar-product">ControlPlane.ai</div>'
+        '<div class="cp-sidebar-mode">DECISION CONSOLE · POC</div>'
+        "</div></div>"
+        '<div class="cp-sidebar-intro">Inspect how each AI candidate is routed, '
+        "verified, decided, and preserved for audit.</div>",
         unsafe_allow_html=True,
     )
-    st.caption("Policy-routed verification for AI outputs")
-    API_URL = st.text_input("Middleware API", "http://localhost:8000").rstrip("/")
-    if st.button("Check API connection", use_container_width=True):
-        health = api_json("GET", "/health", timeout=3)
-        st.success("API connected" if health.get("status") == "ok" else "API responded")
-    st.divider()
+    st.markdown(
+        '<div class="cp-sidebar-nav-label cp-label">Workspace</div>',
+        unsafe_allow_html=True,
+    )
     page = st.radio(
-        "Navigate", ["Run scenario", "Audit trail", "Policies", "Metrics", "Feedback"]
+        "Navigate",
+        list(navigation_labels),
+        format_func=navigation_labels.get,
+        label_visibility="collapsed",
     )
     st.divider()
-    st.caption("Candidate  →  Verify  →  Decide  →  Audit")
+    with st.expander("Connection settings"):
+        API_URL = st.text_input(
+            "Middleware API", "http://localhost:8000", label_visibility="collapsed"
+        ).rstrip("/")
+        if st.button("Test middleware connection", use_container_width=True):
+            health = api_json("GET", "/health", timeout=3)
+            st.success(
+                "API connected" if health.get("status") == "ok" else "API responded"
+            )
+    st.markdown(
+        '<div class="cp-sidebar-route"><div class="cp-label">Adaptive route</div>'
+        '<div class="cp-sidebar-route-nodes">'
+        '<span class="cp-sidebar-node">LOCAL</span><span class="cp-sidebar-chevron">›</span>'
+        '<span class="cp-sidebar-node">EVIDENCE</span><span class="cp-sidebar-chevron">›</span>'
+        '<span class="cp-sidebar-node">JUDGE</span></div>'
+        '<div class="cp-sidebar-route-copy">Stops as soon as policy has enough signal. '
+        "The live judge is a fallback, not the default.</div></div>",
+        unsafe_allow_html=True,
+    )
 
 st.markdown(
     """

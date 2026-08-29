@@ -194,6 +194,7 @@ def test_dashboard_default_page_loads_without_api_call():
     )
     assert any("DROP TABLE customers" in markdown.value for markdown in app.markdown)
     assert {expander.label for expander in app.expander} == {
+        "Connection settings",
         "More scenario details",
         "Raw scenario JSON",
     }
@@ -318,10 +319,10 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         for markdown in app.markdown
         if "Checker verdicts" in markdown.value
     )
-    assert "1 passed" in summary
-    assert "1 failed" in summary
-    assert "1 unknown" in summary
-    assert "0 n/a" in summary
+    assert "<strong>1</strong> passed" in summary
+    assert "<strong>1</strong> failed" in summary
+    assert "<strong>1</strong> unknown" in summary
+    assert "<strong>0</strong> n/a" in summary
     assert any(
         "Engineering Action" in markdown.value
         and "FAIL" in markdown.value
@@ -337,6 +338,7 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         for markdown in app.markdown
     )
     assert {expander.label for expander in app.expander} == {
+        "Connection settings",
         "More scenario details",
         "Raw scenario JSON",
         "More decision details",
