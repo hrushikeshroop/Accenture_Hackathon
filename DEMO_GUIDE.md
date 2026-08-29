@@ -16,6 +16,12 @@ uvicorn controlplane.main:app --reload
 streamlit run dashboard\app.py
 ```
 
+The scenario screen is intentionally layered for the recorded demo. The visible
+story is: user or workflow request, AI candidate, middleware decision, risk tier,
+latency, evidence/authorization state, decision reason, and checker outcomes. Open
+`More decision details` for the verification route, risk signals, full checker table,
+and evidence trace; open `Raw decision JSON` only for the final technical view.
+
 ## Recommended walkthrough
 
 1. Run `safe-file-edit.json` to show LOW risk, deterministic checks, early stop,

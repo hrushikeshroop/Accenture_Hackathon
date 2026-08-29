@@ -187,8 +187,8 @@ def render_decision_banner(result: dict[str, Any]) -> None:
 
 
 def render_checker_summary(checks: list[dict[str, Any]]) -> None:
-    """Show the outcome of every executed checker without its technical trace."""
-    st.markdown("#### Checker summary")
+    """Show checker outcomes and surface the exact point of failure."""
+    st.markdown("#### Checks at a glance")
     counts = {"PASS": 0, "FAIL": 0, "UNKNOWN": 0, "NOT_APPLICABLE": 0}
     for check in checks:
         status = str(check.get("status", "UNKNOWN")).upper()
@@ -215,11 +215,15 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
         if status not in status_icons:
             status = "UNKNOWN"
         name = str(check.get("detector_id", "checker")).replace("_", " ").title()
-        st.markdown(f"- {status_icons[status]} **{name}** — {status.replace('_', ' ')}")
+        line = f"- {status_icons[status]} **{name}** — {status.replace('_', ' ')}"
+        if status in {"FAIL", "UNKNOWN"} and check.get("reason"):
+            line += f": {check['reason']}"
+        st.markdown(line)
 
 
 def render_result_overview(result: dict[str, Any]) -> None:
     risk = result.get("risk_profile", {})
+    st.markdown("#### Risk, latency, and verification depth")
     st.markdown(
         compact_grid(
             [
@@ -233,6 +237,9 @@ def render_result_overview(result: dict[str, Any]) -> None:
         ),
         unsafe_allow_html=True,
     )
+    stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
+    cost = float(result.get("estimated_cost_units", 0))
+    st.caption(f"Verification stopped: {stop} · Estimated cost units: {cost:.1f}")
 
     st.markdown("#### Why this decision")
     reasons = result.get("reasons", [])
@@ -306,9 +313,9 @@ def render_result(
     render_decision_banner(result)
 
     if progressive:
+        render_result_overview(result)
         render_checker_summary(result.get("check_results", []))
         with st.expander("More decision details"):
-            render_result_overview(result)
             render_verification_trace(result)
             render_result_footer(result)
     else:
@@ -365,19 +372,16 @@ if page == "Run scenario":
         ),
         None,
     )
-    if request_key:
-        request_label = (
-            "Scenario question" if request_key == "question" else "Scenario request"
-        )
-        st.markdown(
-            '<div class="cp-card">'
-            f'<div class="cp-label">{request_label}</div>'
-            f'<div class="cp-value">{html.escape(payload[request_key])}</div>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
+    scenario_input = payload.get(request_key) if request_key else meta["prompt"]
+    st.markdown("### 1 · AI input and candidate output")
+    st.markdown(
+        '<div class="cp-card">'
+        '<div class="cp-label">User / workflow request</div>'
+        f'<div class="cp-value">{html.escape(str(scenario_input))}</div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    st.markdown("### 1 · AI output received")
     preview = candidate_preview(payload)
     st.markdown(
         '<div class="cp-ai-output">'

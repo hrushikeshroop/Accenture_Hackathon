@@ -25,6 +25,7 @@ def test_all_scenarios_have_demo_metadata():
     for path in scenario_paths:
         metadata = scenario_meta(path, PROJECT_ROOT)
         assert metadata["title"]
+        assert metadata["prompt"]
         assert metadata["objective"]
         assert metadata["expected"] in {
             "ALLOW",
@@ -129,7 +130,12 @@ def test_dashboard_default_page_loads_without_api_call():
     assert len(app.selectbox) == 1
     assert len(app.selectbox[0].options) == 17
     assert any(
-        "AI output received" in markdown.value for markdown in app.markdown
+        "AI input and candidate output" in markdown.value
+        for markdown in app.markdown
+    )
+    assert any(
+        "Reset the production environment" in markdown.value
+        for markdown in app.markdown
     )
     assert any(
         "DROP TABLE customers" in markdown.value for markdown in app.markdown
@@ -234,7 +240,19 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "ControlPlane decision" in markdown.value and "BLOCK" in markdown.value
         for markdown in app.markdown
     )
-    assert any("Checker summary" in markdown.value for markdown in app.markdown)
+    assert any("Checks at a glance" in markdown.value for markdown in app.markdown)
+    assert any(
+        "Risk, latency, and verification depth" in markdown.value
+        for markdown in app.markdown
+    )
+    assert any(
+        "Latency" in markdown.value and "1.2 ms" in markdown.value
+        for markdown in app.markdown
+    )
+    assert any(
+        "Verification stopped: Critical Veto" in caption.value
+        for caption in app.caption
+    )
     summary = next(
         markdown.value for markdown in app.markdown if "Passed:" in markdown.value
     )
@@ -243,7 +261,9 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     assert "**Unknown:** 1" in summary
     assert "**N/A:** 0" in summary
     assert any(
-        "Engineering Action" in markdown.value and "FAIL" in markdown.value
+        "Engineering Action" in markdown.value
+        and "FAIL" in markdown.value
+        and "destructive command was detected" in markdown.value
         for markdown in app.markdown
     )
     assert any(

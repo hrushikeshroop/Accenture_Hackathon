@@ -62,9 +62,9 @@ than a bug-free or production-ready security product.
 
 ## Demo-readiness follow-up (updated 2026-08-30)
 
-- The raw-JSON-first dashboard was replaced with human-readable scenario, context,
-  decision, route, check, evidence, audit, policy, and metric views. Raw contracts
-  remain available in collapsed technical expanders.
+- The raw-JSON-first dashboard now leads with the scenario input, AI candidate,
+  risk-versus-latency summary, decision reason, and checker outcomes. Verification
+  tables and raw contracts remain available in successive collapsed expanders.
 - The Groq endpoint and free-tier model are fixed in code. The only provider secret is
   `GROQ_API_KEY`, loaded by `python-dotenv` from each teammate's ignored local `.env`;
   `.env.example` remains the committed secret-free template.
