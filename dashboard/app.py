@@ -22,33 +22,207 @@ from dashboard.view_models import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-st.set_page_config(page_title="ControlPlane.ai", page_icon="CP", layout="wide")
+st.set_page_config(
+    page_title="ControlPlane.ai · Decision Console",
+    page_icon="CP",
+    layout="wide",
+)
 st.markdown(
     """
     <style>
-      .block-container {max-width: 1280px; padding-top: 1.7rem; padding-bottom: 3rem;}
+      :root {
+        --cp-indigo: #6558e8;
+        --cp-cyan: #0891b2;
+        --cp-green: #059669;
+        --cp-amber: #d97706;
+        --cp-red: #dc2626;
+        --cp-border: rgba(128, 128, 128, .19);
+        --cp-muted: rgba(128, 128, 128, .08);
+      }
+      #MainMenu, footer {visibility: hidden;}
+      header[data-testid="stHeader"] {background: transparent;}
+      .block-container {
+        max-width: 1180px;
+        padding-top: 1.25rem;
+        padding-bottom: 3rem;
+      }
+      [data-testid="stSidebar"] {
+        border-right: 1px solid var(--cp-border);
+      }
+      [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        line-height: 1.45;
+      }
       [data-testid="stMetric"] {
-        background: rgba(99, 102, 241, 0.06);
-        border: 1px solid rgba(99, 102, 241, 0.16);
-        border-radius: 0.8rem;
-        padding: 0.75rem 0.9rem;
+        background: rgba(99, 88, 232, .045);
+        border: 1px solid rgba(99, 88, 232, .14);
+        border-radius: .75rem;
+        padding: .75rem .9rem;
+      }
+      .stButton > button[kind="primary"] {
+        min-height: 3.05rem;
+        border: 0;
+        border-radius: .75rem;
+        background: linear-gradient(100deg, #574bd6, #6558e8 55%, #397bc6);
+        box-shadow: 0 8px 22px rgba(87, 75, 214, .2);
+        font-weight: 720;
+        letter-spacing: .01em;
+      }
+      .stButton > button[kind="primary"]:hover {
+        box-shadow: 0 10px 28px rgba(87, 75, 214, .28);
+        transform: translateY(-1px);
       }
       .cp-hero {
-        border: 1px solid rgba(99, 102, 241, 0.25);
-        background: linear-gradient(120deg, rgba(79,70,229,.13), rgba(14,165,233,.07));
-        border-radius: 1rem;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1.2rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(99, 88, 232, .22);
+        background:
+          radial-gradient(circle at 88% 20%, rgba(8,145,178,.12), transparent 25%),
+          linear-gradient(120deg, rgba(99,88,232,.12), rgba(8,145,178,.04));
+        border-radius: 1.1rem;
+        padding: 1.15rem 1.35rem;
+        margin-bottom: 1.35rem;
       }
-      .cp-hero h2 {margin: 0 0 .25rem 0;}
+      .cp-hero-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .cp-hero h1 {
+        margin: .12rem 0 .28rem 0;
+        font-size: clamp(1.65rem, 2.5vw, 2.25rem);
+        line-height: 1.08;
+        letter-spacing: -.035em;
+      }
+      .cp-hero-copy {max-width: 760px; opacity: .78; line-height: 1.55;}
+      .cp-system-state {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: .42rem;
+        border: 1px solid rgba(5,150,105,.25);
+        background: rgba(5,150,105,.08);
+        border-radius: 999px;
+        padding: .38rem .62rem;
+        font-size: .7rem;
+        font-weight: 760;
+        letter-spacing: .05em;
+      }
+      .cp-system-dot {
+        width: .45rem;
+        height: .45rem;
+        border-radius: 50%;
+        background: var(--cp-green);
+        box-shadow: 0 0 0 4px rgba(5,150,105,.1);
+      }
+      .cp-hero-tags {margin-top: .75rem;}
+      .cp-hero-tag {
+        display: inline-block;
+        margin: .12rem .25rem .12rem 0;
+        padding: .22rem .55rem;
+        border: 1px solid rgba(99,88,232,.16);
+        background: rgba(255,255,255,.035);
+        border-radius: 999px;
+        font-size: .7rem;
+        font-weight: 650;
+        opacity: .76;
+      }
+      .cp-section-heading {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        margin: .25rem 0 .75rem 0;
+      }
+      .cp-section-number {
+        display: inline-grid;
+        place-items: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: .55rem;
+        color: white;
+        background: #6558e8;
+        font-size: .72rem;
+        font-weight: 800;
+      }
+      .cp-section-title {font-size: 1.08rem; font-weight: 760; letter-spacing: -.01em;}
+      .cp-section-subtitle {font-size: .75rem; opacity: .62; margin-top: .04rem;}
       .cp-card {
-        border: 1px solid rgba(128,128,128,.22);
-        border-radius: .8rem;
+        border: 1px solid var(--cp-border);
+        border-radius: .85rem;
         padding: .9rem 1rem;
         margin: .4rem 0 .8rem 0;
       }
-      .cp-label {font-size: .76rem; opacity: .65; text-transform: uppercase; letter-spacing: .06em;}
+      .cp-label {
+        font-size: .68rem;
+        opacity: .63;
+        text-transform: uppercase;
+        letter-spacing: .085em;
+        font-weight: 720;
+      }
       .cp-value {font-size: 1.02rem; font-weight: 650; margin-top: .18rem;}
+      .cp-conversation {
+        display: grid;
+        grid-template-columns: minmax(0, .88fr) 2.2rem minmax(0, 1.12fr);
+        align-items: stretch;
+        gap: .4rem;
+        margin: .35rem 0 .65rem 0;
+      }
+      .cp-message {
+        min-width: 0;
+        border: 1px solid var(--cp-border);
+        border-radius: .9rem;
+        padding: 1rem 1.05rem;
+        background: rgba(128,128,128,.025);
+      }
+      .cp-message-output {
+        border-color: rgba(8,145,178,.27);
+        background: linear-gradient(130deg, rgba(8,145,178,.075), rgba(99,88,232,.025));
+      }
+      .cp-message-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+        margin-bottom: .62rem;
+      }
+      .cp-message-role {font-size: .72rem; font-weight: 760; letter-spacing: .035em;}
+      .cp-message-chip {
+        border-radius: 999px;
+        padding: .16rem .43rem;
+        background: rgba(128,128,128,.1);
+        font-size: .61rem;
+        font-weight: 800;
+        letter-spacing: .07em;
+        opacity: .7;
+      }
+      .cp-message-body {
+        font-size: .94rem;
+        font-weight: 560;
+        line-height: 1.56;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+      .cp-message-arrow {
+        align-self: center;
+        text-align: center;
+        color: #6558e8;
+        font-size: 1.35rem;
+        opacity: .72;
+      }
+      .cp-context-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        align-items: center;
+        margin: .35rem 0 .85rem 0;
+      }
+      .cp-context-chip {
+        padding: .22rem .52rem;
+        border: 1px solid var(--cp-border);
+        border-radius: 999px;
+        font-size: .69rem;
+        opacity: .72;
+      }
       .cp-summary-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -57,8 +231,8 @@ st.markdown(
       }
       .cp-summary-item {
         min-width: 0;
-        border: 1px solid rgba(128,128,128,.20);
-        background: rgba(99,102,241,.035);
+        border: 1px solid var(--cp-border);
+        background: rgba(99,88,232,.035);
         border-radius: .7rem;
         padding: .62rem .72rem;
       }
@@ -69,30 +243,83 @@ st.markdown(
         margin-top: .12rem;
         overflow-wrap: anywhere;
       }
-      .cp-ai-output {
-        border: 1px solid rgba(14,165,233,.28);
-        border-left: 4px solid rgb(14,165,233);
-        background: rgba(14,165,233,.065);
-        border-radius: .8rem;
-        padding: .9rem 1rem;
-        margin: .45rem 0 .75rem 0;
-      }
-      .cp-ai-body {
-        font-size: 1rem;
-        font-weight: 560;
-        line-height: 1.55;
-        margin: .28rem 0;
-        overflow-wrap: anywhere;
-        white-space: pre-wrap;
-      }
-      .cp-ai-note {font-size: .78rem; opacity: .7;}
       .cp-pill {
         display: inline-block; border-radius: 999px; padding: .2rem .65rem;
         margin: .12rem .18rem .12rem 0; font-size: .78rem; font-weight: 650;
-        background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.2);
+        background: rgba(99,88,232,.1); border: 1px solid rgba(99,88,232,.18);
       }
-      .cp-decision {border-radius: .85rem; padding: .9rem 1rem; margin: .7rem 0 1rem 0;}
-      .cp-decision strong {font-size: 1.18rem;}
+      .cp-decision {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1rem;
+        padding: 1.05rem 1.15rem;
+        margin: .55rem 0 .95rem 0;
+      }
+      .cp-decision::after {
+        content: "";
+        position: absolute;
+        width: 9rem;
+        height: 9rem;
+        right: -3rem;
+        top: -4.8rem;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: .04;
+      }
+      .cp-decision-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-bottom: .72rem;
+      }
+      .cp-decision-state {
+        display: inline-flex;
+        align-items: center;
+        gap: .36rem;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        padding: .2rem .5rem;
+        font-size: .62rem;
+        font-weight: 820;
+        letter-spacing: .07em;
+        opacity: .72;
+      }
+      .cp-decision-dot {width: .4rem; height: .4rem; border-radius: 50%; background: currentColor;}
+      .cp-decision-main {
+        display: grid;
+        grid-template-columns: minmax(220px, .82fr) minmax(0, 1.18fr);
+        gap: 1.2rem;
+        align-items: end;
+      }
+      .cp-decision-word {
+        margin-top: .12rem;
+        font-size: clamp(1.65rem, 3vw, 2.35rem);
+        line-height: 1;
+        font-weight: 830;
+        letter-spacing: -.045em;
+      }
+      .cp-decision-copy {margin-top: .48rem; max-width: 520px; font-size: .84rem; line-height: 1.45; opacity: .8;}
+      .cp-decision-kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .4rem;
+      }
+      .cp-decision-kpi {
+        min-width: 0;
+        border: 1px solid rgba(128,128,128,.17);
+        background: rgba(255,255,255,.23);
+        border-radius: .66rem;
+        padding: .52rem .58rem;
+      }
+      .cp-decision-kpi-value {font-size: .84rem; font-weight: 760; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-decision-reason {
+        margin-top: .78rem;
+        padding-top: .68rem;
+        border-top: 1px solid rgba(128,128,128,.16);
+        font-size: .79rem;
+        line-height: 1.45;
+      }
       .cp-route {
         display: grid;
         grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
@@ -102,28 +329,86 @@ st.markdown(
       }
       .cp-route-step {
         min-width: 0;
-        border: 1px solid rgba(128,128,128,.22);
-        border-radius: .7rem;
-        padding: .62rem .68rem;
-        background: rgba(99,102,241,.035);
+        border: 1px solid var(--cp-border);
+        border-radius: .78rem;
+        padding: .7rem .75rem;
+        background: rgba(128,128,128,.025);
       }
-      .cp-route-state {font-weight: 720; font-size: .9rem; margin-top: .12rem;}
+      .cp-route-top {display: flex; align-items: center; justify-content: space-between; gap: .4rem;}
+      .cp-route-index {
+        display: inline-grid;
+        place-items: center;
+        width: 1.2rem;
+        height: 1.2rem;
+        border-radius: .38rem;
+        background: rgba(99,88,232,.1);
+        color: #6558e8;
+        font-size: .6rem;
+        font-weight: 820;
+      }
+      .cp-route-state {font-weight: 780; font-size: .86rem; margin-top: .28rem;}
       .cp-route-detail {font-size: .74rem; opacity: .72; margin-top: .12rem;}
-      .cp-route-arrow {align-self: center; opacity: .45; font-size: 1.15rem;}
-      .cp-route-step[data-state="SKIPPED"] {opacity: .55; background: transparent;}
-      .cp-route-step[data-state="CALLED"] {border-color: rgba(168,85,247,.42); background: rgba(168,85,247,.08);}
-      .cp-route-step[data-label="Decision"] {border-color: rgba(14,165,233,.38); background: rgba(14,165,233,.07);}
+      .cp-route-arrow {align-self: center; color: #6558e8; opacity: .42; font-size: 1.05rem;}
+      .cp-route-step[data-state="SKIPPED"], .cp-route-step[data-state="NO CALL"] {opacity: .52; background: transparent;}
+      .cp-route-step[data-state="CALLED"] {border-color: rgba(126,34,206,.32); background: rgba(126,34,206,.065);}
+      .cp-route-step[data-label="Decision"] {border-color: rgba(8,145,178,.32); background: rgba(8,145,178,.055);}
+      .cp-route-note {font-size: .73rem; opacity: .65; margin: -.2rem 0 .45rem 0;}
+      .cp-tradeoff {
+        display: grid;
+        grid-template-columns: .92fr 1.08fr;
+        gap: .85rem;
+        border: 1px solid var(--cp-border);
+        background: rgba(128,128,128,.022);
+        border-radius: .85rem;
+        padding: .8rem .9rem;
+        margin: .4rem 0 .95rem 0;
+      }
+      .cp-tradeoff-copy {font-size: .78rem; line-height: 1.45; opacity: .74; margin-top: .23rem;}
+      .cp-budget-head {display: flex; justify-content: space-between; gap: .6rem; font-size: .72rem; font-weight: 700;}
+      .cp-budget-track {height: .42rem; border-radius: 999px; background: rgba(128,128,128,.14); margin: .55rem 0 .3rem 0; overflow: hidden;}
+      .cp-budget-fill {height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6558e8, #0891b2);}
+      .cp-budget-fill.cp-over {background: linear-gradient(90deg, #d97706, #dc2626);}
+      .cp-budget-caption {font-size: .66rem; opacity: .62;}
+      .cp-check-head {display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-top: .2rem;}
+      .cp-check-counts {display: flex; flex-wrap: wrap; gap: .28rem; justify-content: flex-end;}
+      .cp-count-pill {border: 1px solid var(--cp-border); border-radius: 999px; padding: .16rem .42rem; font-size: .64rem; font-weight: 720;}
+      .cp-check-grid {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin: .55rem 0 .95rem 0;}
+      .cp-check {
+        min-width: 0;
+        border: 1px solid var(--cp-border);
+        border-left-width: 3px;
+        border-radius: .72rem;
+        padding: .62rem .68rem;
+        background: rgba(128,128,128,.022);
+      }
+      .cp-check[data-status="PASS"] {border-left-color: var(--cp-green);}
+      .cp-check[data-status="FAIL"] {border-left-color: var(--cp-red); background: rgba(220,38,38,.035);}
+      .cp-check[data-status="UNKNOWN"] {border-left-color: var(--cp-amber); background: rgba(217,119,6,.035);}
+      .cp-check[data-status="NOT_APPLICABLE"] {border-left-color: #64748b; opacity: .62;}
+      .cp-check-title {font-size: .76rem; font-weight: 750; line-height: 1.28;}
+      .cp-check-meta {display: flex; justify-content: space-between; gap: .5rem; margin-top: .22rem; font-size: .64rem; opacity: .68;}
+      .cp-check-reason {font-size: .68rem; line-height: 1.4; margin-top: .38rem; opacity: .76;}
       .cp-good {background: rgba(16,185,129,.11); border: 1px solid rgba(16,185,129,.32);}
       .cp-edit {background: rgba(14,165,233,.11); border: 1px solid rgba(14,165,233,.32);}
       .cp-warn {background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.34);}
       .cp-bad {background: rgba(239,68,68,.11); border: 1px solid rgba(239,68,68,.34);}
       div[data-testid="stDataFrame"] {border: 1px solid rgba(128,128,128,.16); border-radius: .6rem;}
+      div[data-testid="stExpander"] {border-color: var(--cp-border); border-radius: .72rem;}
       @media (max-width: 900px) {
         .cp-summary-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
+        .cp-decision-main {grid-template-columns: 1fr;}
+        .cp-decision-kpis {grid-template-columns: repeat(2, minmax(0, 1fr));}
+        .cp-check-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
+        .cp-tradeoff {grid-template-columns: 1fr;}
         .cp-route {grid-template-columns: 1fr;}
         .cp-route-arrow {display: none;}
       }
-      @media (max-width: 560px) {
+      @media (max-width: 650px) {
+        .cp-hero-top {display: block;}
+        .cp-system-state {margin-top: .75rem;}
+        .cp-conversation {grid-template-columns: 1fr;}
+        .cp-message-arrow {transform: rotate(90deg);}
+        .cp-check-grid {grid-template-columns: 1fr;}
         .cp-summary-grid {grid-template-columns: 1fr;}
       }
     </style>
@@ -191,6 +476,14 @@ def decision_tone(decision: str) -> str:
     }.get(decision, "cp-warn")
 
 
+def checker_counts(checks: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"PASS": 0, "FAIL": 0, "UNKNOWN": 0, "NOT_APPLICABLE": 0}
+    for check in checks:
+        status = str(check.get("status", "UNKNOWN")).upper()
+        counts[status if status in counts else "UNKNOWN"] += 1
+    return counts
+
+
 def render_decision_banner(result: dict[str, Any]) -> None:
     decision = str(result.get("decision", "UNKNOWN"))
     explanation = {
@@ -200,17 +493,60 @@ def render_decision_banner(result: dict[str, Any]) -> None:
         "BLOCK": "A policy veto prevents this action from executing.",
         "ESCALATE": "A human decision is required before continuing.",
     }.get(decision, "The middleware returned an unrecognized outcome.")
+    checks = result.get("check_results", [])
+    counts = checker_counts(checks)
+    check_summary = f"{counts['PASS']} passed"
+    if counts["FAIL"]:
+        check_summary += f" · {counts['FAIL']} failed"
+    if counts["UNKNOWN"]:
+        check_summary += f" · {counts['UNKNOWN']} unknown"
+    latency_ms = float(result.get("latency_ms", 0))
+    budget_ms = float(result.get("latency_budget_ms", 0))
+    latency_value = f"{latency_ms:.1f} ms"
+    if budget_ms > 0:
+        latency_value = f"{latency_ms:.1f} / {budget_ms:.0f} ms"
+    model_calls = int(result.get("model_calls", 0))
+    judge_value = (
+        "Not needed"
+        if model_calls == 0
+        else f"{model_calls} live call{'s' if model_calls != 1 else ''}"
+    )
+    guidance = result.get("action_guidance", {})
+    reasons = result.get("reasons", [])
+    summary = str(guidance.get("summary") or explanation)
+    primary_reason = str(reasons[0]) if reasons else explanation
     st.markdown(
         f'<div class="cp-decision {decision_tone(decision)}">'
-        f'<div class="cp-label">ControlPlane action</div>'
-        f"<strong>{html.escape(decision.replace('_', ' '))}</strong><br>"
-        f"{html.escape(explanation)}</div>",
+        '<div class="cp-decision-head">'
+        '<div class="cp-label">Middleware decision</div>'
+        '<div class="cp-decision-state"><span class="cp-decision-dot"></span>'
+        "VERIFICATION COMPLETE</div></div>"
+        '<div class="cp-decision-main"><div>'
+        f'<div class="cp-decision-word">{html.escape(decision.replace("_", " "))}</div>'
+        f'<div class="cp-decision-copy">{html.escape(summary)}</div></div>'
+        '<div class="cp-decision-kpis">'
+        '<div class="cp-decision-kpi"><div class="cp-label">Risk</div>'
+        f'<div class="cp-decision-kpi-value">{html.escape(str(result.get("risk_profile", {}).get("tier", "—")))}</div></div>'
+        '<div class="cp-decision-kpi"><div class="cp-label">Latency / budget</div>'
+        f'<div class="cp-decision-kpi-value">{html.escape(latency_value)}</div></div>'
+        '<div class="cp-decision-kpi"><div class="cp-label">Check outcome</div>'
+        f'<div class="cp-decision-kpi-value">{html.escape(check_summary)}</div></div>'
+        '<div class="cp-decision-kpi"><div class="cp-label">Groq judge</div>'
+        f'<div class="cp-decision-kpi-value">{html.escape(judge_value)}</div></div>'
+        "</div></div>"
+        '<div class="cp-decision-reason"><span class="cp-label">Primary reason</span><br>'
+        f"{html.escape(primary_reason)}</div></div>",
         unsafe_allow_html=True,
     )
 
 
 def render_adaptive_route(result: dict[str, Any]) -> None:
-    st.markdown("#### Verification path")
+    st.markdown("#### Verification route")
+    st.markdown(
+        '<div class="cp-route-note">Fail fast locally, add governed evidence when needed, '
+        "and pay for the live judge only when uncertainty remains.</div>",
+        unsafe_allow_html=True,
+    )
     stages = verification_route(result)
     parts: list[str] = []
     for index, stage in enumerate(stages):
@@ -220,7 +556,9 @@ def render_adaptive_route(result: dict[str, Any]) -> None:
             '<div class="cp-route-step" '
             f'data-state="{html.escape(str(stage["state"]))}" '
             f'data-label="{html.escape(str(stage["label"]))}">'
+            '<div class="cp-route-top">'
             f'<div class="cp-label">{html.escape(str(stage["label"]))}</div>'
+            f'<div class="cp-route-index">{index + 1:02d}</div></div>'
             f'<div class="cp-route-state">{html.escape(str(stage["state"]))}</div>'
             f'<div class="cp-route-detail">{html.escape(str(stage["detail"]))}</div>'
             "</div>"
@@ -233,37 +571,45 @@ def render_adaptive_route(result: dict[str, Any]) -> None:
 
 def render_checker_summary(checks: list[dict[str, Any]]) -> None:
     """Show checker outcomes and surface the exact point of failure."""
-    st.markdown("#### Checks at a glance")
-    counts = {"PASS": 0, "FAIL": 0, "UNKNOWN": 0, "NOT_APPLICABLE": 0}
-    for check in checks:
-        status = str(check.get("status", "UNKNOWN")).upper()
-        counts[status if status in counts else "UNKNOWN"] += 1
-
+    counts = checker_counts(checks)
     st.markdown(
-        f"**Passed:** {counts['PASS']} · "
-        f"**Failed:** {counts['FAIL']} · "
-        f"**Unknown:** {counts['UNKNOWN']} · "
-        f"**N/A:** {counts['NOT_APPLICABLE']}"
+        '<div class="cp-check-head"><div><div class="cp-label">Checker verdicts</div>'
+        '<div class="cp-section-title">What passed—and what did not</div></div>'
+        '<div class="cp-check-counts">'
+        f'<span class="cp-count-pill">{counts["PASS"]} passed</span>'
+        f'<span class="cp-count-pill">{counts["FAIL"]} failed</span>'
+        f'<span class="cp-count-pill">{counts["UNKNOWN"]} unknown</span>'
+        f'<span class="cp-count-pill">{counts["NOT_APPLICABLE"]} n/a</span>'
+        "</div></div>",
+        unsafe_allow_html=True,
     )
     if not checks:
         st.caption("No checker was required for this route.")
         return
 
-    status_icons = {
-        "PASS": "✅",
-        "FAIL": "❌",
-        "UNKNOWN": "⚠️",
-        "NOT_APPLICABLE": "➖",
-    }
+    cards: list[str] = []
     for check in checks:
         status = str(check.get("status", "UNKNOWN")).upper()
-        if status not in status_icons:
+        if status not in counts:
             status = "UNKNOWN"
         name = str(check.get("detector_id", "checker")).replace("_", " ").title()
-        line = f"- {status_icons[status]} **{name}** — {status.replace('_', ' ')}"
+        evidence = str(check.get("evidence_state", "—")).replace("_", " ").title()
+        latency = float(check.get("latency_ms", 0))
+        reason = ""
         if status in {"FAIL", "UNKNOWN"} and check.get("reason"):
-            line += f": {check['reason']}"
-        st.markdown(line)
+            reason = f'<div class="cp-check-reason">{html.escape(str(check["reason"]))}</div>'
+        cards.append(
+            f'<div class="cp-check" data-status="{html.escape(status)}">'
+            f'<div class="cp-check-title">{html.escape(name)}</div>'
+            '<div class="cp-check-meta">'
+            f"<span>{html.escape(status.replace('_', ' '))}</span>"
+            f"<span>{latency:.1f} ms · {html.escape(evidence)}</span></div>"
+            f"{reason}</div>"
+        )
+    st.markdown(
+        f'<div class="cp-check-grid">{"".join(cards)}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_result_overview(result: dict[str, Any]) -> None:
@@ -273,33 +619,40 @@ def render_result_overview(result: dict[str, Any]) -> None:
     budget_used = (
         latency_ms / latency_budget_ms * 100 if latency_budget_ms > 0 else None
     )
-    st.markdown("#### Outcome at a glance")
+    budget_label = "No policy budget"
+    budget_caption = f"Observed latency: {latency_ms:.1f} ms"
+    width = 0.0
+    over_class = ""
+    if budget_used is not None:
+        budget_label = f"{latency_ms:.1f} of {latency_budget_ms:.0f} ms"
+        budget_caption = f"{budget_used:.1f}% used · " + (
+            "within policy budget" if budget_used <= 100 else "policy budget exceeded"
+        )
+        width = min(max(budget_used, 0.0), 100.0)
+        over_class = " cp-over" if budget_used > 100 else ""
+    model_calls = int(result.get("model_calls", 0))
+    tradeoff_copy = (
+        f"Uncertainty required {model_calls} live Groq judge "
+        f"call{'s' if model_calls != 1 else ''}."
+        if model_calls
+        else "No live judge call was needed; the route stopped when policy had enough signal."
+    )
+    st.markdown("#### Risk versus latency")
     st.markdown(
-        compact_grid(
-            [
-                ("Risk", risk.get("tier", "—")),
-                ("Evidence", result.get("evidence_state", "—")),
-                ("Authorization", result.get("authorization_state", "—")),
-                ("Checks run", result.get("checks_executed", 0)),
-                ("Latency", f"{latency_ms:.1f} ms"),
-                (
-                    "Policy budget",
-                    f"{latency_budget_ms:.0f} ms" if latency_budget_ms > 0 else "—",
-                ),
-                (
-                    "Budget used",
-                    f"{budget_used:.1f}%" if budget_used is not None else "—",
-                ),
-                ("Model calls", result.get("model_calls", 0)),
-            ]
-        ),
+        '<div class="cp-tradeoff"><div>'
+        '<div class="cp-label">Adaptive routing</div>'
+        f'<div class="cp-summary-value">{html.escape(str(risk.get("tier", "—")))} risk · '
+        f"{int(result.get('checks_executed', 0))} checks</div>"
+        f'<div class="cp-tradeoff-copy">{html.escape(tradeoff_copy)} '
+        f"Evidence: {html.escape(str(result.get('evidence_state', '—')).replace('_', ' ').title())} · "
+        f"Authorization: {html.escape(str(result.get('authorization_state', '—')).replace('_', ' ').title())}</div>"
+        '</div><div><div class="cp-budget-head"><span>Latency budget</span>'
+        f"<span>{html.escape(budget_label)}</span></div>"
+        '<div class="cp-budget-track">'
+        f'<div class="cp-budget-fill{over_class}" style="width:{width:.1f}%"></div></div>'
+        f'<div class="cp-budget-caption">{html.escape(budget_caption)}</div></div></div>',
         unsafe_allow_html=True,
     )
-    if budget_used is not None:
-        st.progress(
-            min(max(budget_used / 100, 0.0), 1.0),
-            text=f"Latency budget: {latency_ms:.1f} of {latency_budget_ms:.0f} ms",
-        )
     stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
     cost = float(result.get("estimated_cost_units", 0))
     st.caption(f"Verification stopped: {stop} · Estimated cost units: {cost:.1f}")
@@ -452,34 +805,54 @@ def render_result(
 
 
 with st.sidebar:
-    st.markdown("## ControlPlane.ai")
-    st.caption("Adaptive verification · PoC console")
+    st.markdown(
+        '<div class="cp-label">ControlPlane.ai</div>'
+        '<div style="font-size:1.2rem;font-weight:780;margin:.16rem 0 .1rem 0;">'
+        "Decision console</div>",
+        unsafe_allow_html=True,
+    )
+    st.caption("Policy-routed verification for AI outputs")
     API_URL = st.text_input("Middleware API", "http://localhost:8000").rstrip("/")
     if st.button("Check API connection", use_container_width=True):
         health = api_json("GET", "/health", timeout=3)
         st.success("API connected" if health.get("status") == "ok" else "API responded")
     st.divider()
     page = st.radio(
-        "Workspace", ["Run scenario", "Audit trail", "Policies", "Metrics", "Feedback"]
+        "Navigate", ["Run scenario", "Audit trail", "Policies", "Metrics", "Feedback"]
     )
     st.divider()
-    st.caption("Candidate → Verify → Decide → Audit")
+    st.caption("Candidate  →  Verify  →  Decide  →  Audit")
 
 st.markdown(
     """
     <div class="cp-hero">
-      <h2>ControlPlane.ai</h2>
-      <div>Risk-adaptive verification between an AI candidate and the user or tool it could affect.</div>
+      <div class="cp-hero-top">
+        <div>
+          <div class="cp-label">AI decision middleware</div>
+          <h1>Trust is a decision, not a default.</h1>
+          <div class="cp-hero-copy">ControlPlane evaluates an AI candidate against risk, policy,
+          evidence, and authorization before it can reach a user or execute a tool.</div>
+        </div>
+        <div class="cp-system-state"><span class="cp-system-dot"></span>STAGE 2 POC</div>
+      </div>
+      <div class="cp-hero-tags">
+        <span class="cp-hero-tag">Risk-adaptive routing</span>
+        <span class="cp-hero-tag">Governed evidence</span>
+        <span class="cp-hero-tag">Groq judge on demand</span>
+      </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
 if page == "Run scenario":
-    st.subheader("Scenario demonstration")
+    st.subheader("Decision walkthrough")
+    st.caption(
+        "Choose a prepared case, inspect the AI candidate, then watch the middleware route it."
+    )
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
     selected = st.selectbox(
-        "Scenario",
+        "Choose a scenario",
         scenario_paths,
         format_func=lambda path: scenario_meta(path, PROJECT_ROOT)["title"],
     )
@@ -495,28 +868,37 @@ if page == "Run scenario":
         None,
     )
     scenario_input = payload.get(request_key) if request_key else meta["prompt"]
-    st.markdown("### 1 · AI input and candidate output")
-    st.markdown(
-        '<div class="cp-card">'
-        '<div class="cp-label">User / workflow request</div>'
-        f'<div class="cp-value">{html.escape(str(scenario_input))}</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
     preview = candidate_preview(payload)
     st.markdown(
-        '<div class="cp-ai-output">'
-        f'<div class="cp-label">{html.escape(preview["label"])}</div>'
-        f'<div class="cp-ai-body">{html.escape(preview["body"])}</div>'
+        '<div class="cp-section-heading"><span class="cp-section-number">01</span><div>'
+        '<div class="cp-section-title">AI candidate under review</div>'
+        '<div class="cp-section-subtitle">The middleware receives both the original intent and the proposed output.</div>'
+        "</div></div>"
+        '<div class="cp-conversation">'
+        '<div class="cp-message"><div class="cp-message-head">'
+        '<span class="cp-message-role">Scenario request</span>'
+        '<span class="cp-message-chip">INPUT</span></div>'
+        f'<div class="cp-message-body">{html.escape(str(scenario_input))}</div></div>'
+        '<div class="cp-message-arrow">→</div>'
+        '<div class="cp-message cp-message-output"><div class="cp-message-head">'
+        f'<span class="cp-message-role">{html.escape(preview["label"])}</span>'
+        '<span class="cp-message-chip">CANDIDATE</span></div>'
+        f'<div class="cp-message-body">{html.escape(preview["body"])}</div></div>'
         "</div>",
         unsafe_allow_html=True,
     )
-    st.caption(
-        "Context: "
-        f"{str(payload.get('use_case', 'unknown')).replace('.', ' / ').replace('_', ' ').title()}"
-        " · Event: "
-        f"{str(payload.get('event_type', 'unknown')).replace('_', ' ').title()}"
+    use_case_label = (
+        str(payload.get("use_case", "unknown"))
+        .replace(".", " / ")
+        .replace("_", " ")
+        .title()
+    )
+    event_label = str(payload.get("event_type", "unknown")).replace("_", " ").title()
+    st.markdown(
+        '<div class="cp-context-line"><span class="cp-label">Trusted context</span>'
+        f'<span class="cp-context-chip">{html.escape(use_case_label)}</span>'
+        f'<span class="cp-context-chip">{html.escape(event_label)}</span></div>',
+        unsafe_allow_html=True,
     )
 
     actor = payload.get("actor", {})
@@ -580,14 +962,23 @@ if page == "Run scenario":
     with st.expander("Raw scenario JSON"):
         st.json(payload, expanded=False)
 
-    if st.button("Evaluate AI output", type="primary", use_container_width=True):
-        with st.spinner("Selecting a risk-proportional verification route..."):
+    if st.button(
+        "Run middleware verification", type="primary", use_container_width=True
+    ):
+        with st.spinner("Routing through the minimum policy checks required..."):
             result = api_json("POST", "/evaluate", json=payload, timeout=20)
         st.session_state["last_result"] = result
         st.session_state["last_scenario"] = str(selected)
 
     if st.session_state.get("last_scenario") == str(selected):
-        st.markdown("### 2 · Verification result")
+        st.markdown(
+            '<div class="cp-section-heading" style="margin-top:1.15rem;">'
+            '<span class="cp-section-number">02</span><div>'
+            '<div class="cp-section-title">Middleware verification result</div>'
+            '<div class="cp-section-subtitle">Decision, routing cost, and failure point at a glance.</div>'
+            "</div></div>",
+            unsafe_allow_html=True,
+        )
         render_result(st.session_state["last_result"], progressive=True)
 
 elif page == "Audit trail":

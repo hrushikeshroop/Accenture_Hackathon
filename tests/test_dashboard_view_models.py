@@ -182,11 +182,11 @@ def test_dashboard_default_page_loads_without_api_call():
     app.run(timeout=15)
 
     assert not app.exception
-    assert app.subheader[0].value == "Scenario demonstration"
+    assert app.subheader[0].value == "Decision walkthrough"
     assert len(app.selectbox) == 1
     assert len(app.selectbox[0].options) == 17
     assert any(
-        "AI input and candidate output" in markdown.value for markdown in app.markdown
+        "AI candidate under review" in markdown.value for markdown in app.markdown
     )
     assert any(
         "Reset the production environment" in markdown.value
@@ -290,21 +290,23 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
     app.run(timeout=15)
     evaluate = next(
-        button for button in app.button if button.label == "Evaluate AI output"
+        button for button in app.button if button.label == "Run middleware verification"
     )
     evaluate.click().run(timeout=15)
 
     assert not app.exception
     assert any(
-        "ControlPlane action" in markdown.value and "BLOCK" in markdown.value
+        "Middleware decision" in markdown.value and "BLOCK" in markdown.value
         for markdown in app.markdown
     )
-    assert any("Verification result" in markdown.value for markdown in app.markdown)
-    assert any("Checks at a glance" in markdown.value for markdown in app.markdown)
-    assert any("Outcome at a glance" in markdown.value for markdown in app.markdown)
-    assert any("Verification path" in markdown.value for markdown in app.markdown)
     assert any(
-        "Policy budget" in markdown.value and "100 ms" in markdown.value
+        "Middleware verification result" in markdown.value for markdown in app.markdown
+    )
+    assert any("Checker verdicts" in markdown.value for markdown in app.markdown)
+    assert any("Risk versus latency" in markdown.value for markdown in app.markdown)
+    assert any("Verification route" in markdown.value for markdown in app.markdown)
+    assert any(
+        "Latency / budget" in markdown.value and "100" in markdown.value
         for markdown in app.markdown
     )
     assert any(
@@ -312,12 +314,14 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         for caption in app.caption
     )
     summary = next(
-        markdown.value for markdown in app.markdown if "Passed:" in markdown.value
+        markdown.value
+        for markdown in app.markdown
+        if "Checker verdicts" in markdown.value
     )
-    assert "**Passed:** 1" in summary
-    assert "**Failed:** 1" in summary
-    assert "**Unknown:** 1" in summary
-    assert "**N/A:** 0" in summary
+    assert "1 passed" in summary
+    assert "1 failed" in summary
+    assert "1 unknown" in summary
+    assert "0 n/a" in summary
     assert any(
         "Engineering Action" in markdown.value
         and "FAIL" in markdown.value
