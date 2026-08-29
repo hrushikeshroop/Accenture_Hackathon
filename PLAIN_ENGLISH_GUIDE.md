@@ -200,18 +200,18 @@ They're not vague—they're **intentionally bounded for a PoC** (proof of concep
 
 ```
 Current baseline:
-- 90 automated tests passed
-- 15 scenarios; 15 matched expected action (100%)
+- 96 automated tests passed; 3 opt-in live Groq cases skipped
+- 17 scenarios; 17 matched expected action (100%)
 - False-block rate: 0.0 on test cases
 - Unsafe-escape rate: 0.0 on test cases
-- Avg checks per scenario: 4.40
+- Avg checks per scenario: 4.59
 - Zero external model calls (all deterministic)
 ```
 
 These are **NOT production claims**. The team deliberately avoided saying "99.9% accuracy in production." Instead:
 - ✅ Deterministic checks (secrets, SQL parsing) are reliable.
 - ❌ Bias detection, multi-turn reasoning, geographic legal rules = **out of scope** (future work).
-- ❓ The system was tested on 15 labeled scenarios, not millions of real events.
+- ❓ The system was tested on 17 labeled scenarios, not millions of real events.
 
 ---
 

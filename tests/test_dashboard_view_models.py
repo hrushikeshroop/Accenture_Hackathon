@@ -21,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 def test_all_scenarios_have_demo_metadata():
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
 
-    assert len(scenario_paths) == 15
+    assert len(scenario_paths) == 17
     for path in scenario_paths:
         metadata = scenario_meta(path, PROJECT_ROOT)
         assert metadata["title"]
@@ -127,13 +127,17 @@ def test_dashboard_default_page_loads_without_api_call():
     assert not app.exception
     assert app.subheader[0].value == "Scenario demonstration"
     assert len(app.selectbox) == 1
-    assert len(app.selectbox[0].options) == 15
+    assert len(app.selectbox[0].options) == 17
     assert any(
         "AI output received" in markdown.value for markdown in app.markdown
     )
     assert any(
         "DROP TABLE customers" in markdown.value for markdown in app.markdown
     )
+    assert {expander.label for expander in app.expander} == {
+        "More scenario details",
+        "Raw scenario JSON",
+    }
 
 
 def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
@@ -153,8 +157,12 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "decision": "BLOCK",
         "stop_reason": "CRITICAL_VETO",
         "reasons": ["A destructive database operation is blocked."],
-        "checks_selected": ["engineering_action"],
-        "checks_skipped": ["judge_detector"],
+        "checks_selected": [
+            "engineering_action",
+            "historical_detector",
+            "judge_detector",
+        ],
+        "checks_skipped": [],
         "check_results": [
             {
                 "detector_id": "engineering_action",
@@ -165,7 +173,27 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
                 "latency_ms": 0.5,
                 "reason": "A destructive command was detected.",
                 "evidence_references": [],
-            }
+            },
+            {
+                "detector_id": "historical_detector",
+                "status": "PASS",
+                "severity": "LOW",
+                "evidence_state": "NOT_APPLICABLE",
+                "confidence": 0.9,
+                "latency_ms": 0.2,
+                "reason": "No risky history was found.",
+                "evidence_references": [],
+            },
+            {
+                "detector_id": "judge_detector",
+                "status": "UNKNOWN",
+                "severity": "HIGH",
+                "evidence_state": "UNCERTAIN",
+                "confidence": None,
+                "latency_ms": 5,
+                "reason": "The judge could not resolve the claim.",
+                "evidence_references": [],
+            },
         ],
         "policy_id": "engineering-production",
         "policy_version": "1.0",
@@ -173,7 +201,7 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "latency_ms": 1.25,
         "estimated_cost_units": 2,
         "model_calls": 0,
-        "checks_executed": 1,
+        "checks_executed": 3,
         "source_versions": {},
         "source_checksums": {},
         "sanitized_output": None,
@@ -206,11 +234,29 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "ControlPlane decision" in markdown.value and "BLOCK" in markdown.value
         for markdown in app.markdown
     )
+    assert any("Checker summary" in markdown.value for markdown in app.markdown)
+    summary = next(
+        markdown.value for markdown in app.markdown if "Passed:" in markdown.value
+    )
+    assert "**Passed:** 1" in summary
+    assert "**Failed:** 1" in summary
+    assert "**Unknown:** 1" in summary
+    assert "**N/A:** 0" in summary
     assert any(
-        "Risk" in markdown.value and "CRITICAL" in markdown.value
+        "Engineering Action" in markdown.value and "FAIL" in markdown.value
         for markdown in app.markdown
     )
     assert any(
-        expander.label == "How ControlPlane reached this decision"
-        for expander in app.expander
+        "Historical Detector" in markdown.value and "PASS" in markdown.value
+        for markdown in app.markdown
     )
+    assert any(
+        "Judge Detector" in markdown.value and "UNKNOWN" in markdown.value
+        for markdown in app.markdown
+    )
+    assert {expander.label for expander in app.expander} == {
+        "More scenario details",
+        "Raw scenario JSON",
+        "More decision details",
+        "Raw decision JSON",
+    }

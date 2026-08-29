@@ -1,6 +1,6 @@
 # Adversarial verification report
 
-Date: 2026-08-28
+Date: 2026-08-28; updated 2026-08-30
 
 ## Scope
 
@@ -30,12 +30,12 @@ Each item above now has a regression test or an end-to-end launcher check.
 
 - Ruff: all checks passed.
 - Pyright: 0 errors, 0 warnings.
-- Pytest: 83 passed.
-- Labelled evaluation: 15/15 expected decisions.
+- Pytest: 96 passed, 3 opt-in live Groq cases skipped.
+- Labelled evaluation: 17/17 expected decisions.
 - Fixture false-block rate: 0.0.
 - Fixture unsafe-escape rate: 0.0.
 - Deterministic fixture model calls: 0.
-- Average checks executed: 4.4.
+- Average checks executed: 4.59.
 - Scenario files and evaluation labels match exactly, with unique event IDs.
 - Policy replay and the explicitly simulated judge scripts completed.
 - FastAPI and Streamlit started together through the localhost-only fresh-database
@@ -54,25 +54,29 @@ security, or production performance.
 - Bias, prompt injection, multi-turn causal risk, load testing, multi-tenancy,
   authentication, regulatory certification, and tamper-evident audit storage remain
   outside this student PoC.
-- The 15 labelled cases are too small to support production-level statistical claims.
+- The 17 labelled cases are too small to support production-level statistical claims.
 
 The repository is technically coherent with the selectively implemented Stage 2
 solutioning areas, but it must continue to be presented as a proof of concept rather
 than a bug-free or production-ready security product.
 
-## Demo-readiness follow-up (2026-08-29)
+## Demo-readiness follow-up (updated 2026-08-30)
 
 - The raw-JSON-first dashboard was replaced with human-readable scenario, context,
   decision, route, check, evidence, audit, policy, and metric views. Raw contracts
   remain available in collapsed technical expanders.
-- An environment-gated real-provider integration test and Groq demo script were added;
-  normal tests remain offline. The credential exposed in chat was not used or stored.
+- The Groq endpoint and free-tier model are fixed in code. The only provider secret is
+  `GROQ_API_KEY`, loaded by `python-dotenv` from each teammate's ignored local `.env`;
+  `.env.example` remains the committed secret-free template.
+- Two more judge-routed fixtures were added. The corpus now has 17 labelled fixtures,
+  and the live Groq script/test covers three evidence-bound demonstrations while the
+  normal suite remains offline.
 - Python 3.11.9 and exact direct demo dependencies were recorded separately from the
   existing compatible ranges.
 - Dashboard expectation metadata is cross-checked against the labelled evaluation
   corpus.
-- Updated verification: Ruff passed; Pyright reported 0 errors and 0 warnings across
-  51 files; Pytest reported 90 passed and 1 opt-in live test skipped; all 15 labelled
-  deterministic decisions still matched.
+- Updated verification: Ruff passed; Pyright reported 0 errors and 0 warnings; Pytest
+  reported 96 passed and 3 opt-in live Groq cases skipped; all 17 labelled
+  deterministic decisions matched, with zero model calls in the deterministic run.
 
 See `PROJECT_HANDOFF.md` for the complete history and regression-prevention procedure.

@@ -168,7 +168,7 @@ def decision_tone(decision: str) -> str:
     }.get(decision, "cp-warn")
 
 
-def render_result(result: dict[str, Any], *, include_raw: bool = True) -> None:
+def render_decision_banner(result: dict[str, Any]) -> None:
     decision = str(result.get("decision", "UNKNOWN"))
     explanation = {
         "ALLOW": "Mandatory checks resolved. The candidate may continue.",
@@ -185,6 +185,40 @@ def render_result(result: dict[str, Any], *, include_raw: bool = True) -> None:
         unsafe_allow_html=True,
     )
 
+
+def render_checker_summary(checks: list[dict[str, Any]]) -> None:
+    """Show the outcome of every executed checker without its technical trace."""
+    st.markdown("#### Checker summary")
+    counts = {"PASS": 0, "FAIL": 0, "UNKNOWN": 0, "NOT_APPLICABLE": 0}
+    for check in checks:
+        status = str(check.get("status", "UNKNOWN")).upper()
+        counts[status if status in counts else "UNKNOWN"] += 1
+
+    st.markdown(
+        f"**Passed:** {counts['PASS']} · "
+        f"**Failed:** {counts['FAIL']} · "
+        f"**Unknown:** {counts['UNKNOWN']} · "
+        f"**N/A:** {counts['NOT_APPLICABLE']}"
+    )
+    if not checks:
+        st.caption("No checker was required for this route.")
+        return
+
+    status_icons = {
+        "PASS": "✅",
+        "FAIL": "❌",
+        "UNKNOWN": "⚠️",
+        "NOT_APPLICABLE": "➖",
+    }
+    for check in checks:
+        status = str(check.get("status", "UNKNOWN")).upper()
+        if status not in status_icons:
+            status = "UNKNOWN"
+        name = str(check.get("detector_id", "checker")).replace("_", " ").title()
+        st.markdown(f"- {status_icons[status]} **{name}** — {status.replace('_', ' ')}")
+
+
+def render_result_overview(result: dict[str, Any]) -> None:
     risk = result.get("risk_profile", {})
     st.markdown(
         compact_grid(
@@ -212,54 +246,79 @@ def render_result(result: dict[str, Any], *, include_raw: bool = True) -> None:
         st.markdown("#### Safe output released by ControlPlane")
         st.success(result["sanitized_output"])
 
+
+def render_verification_trace(result: dict[str, Any]) -> None:
+    risk = result.get("risk_profile", {})
     checks = result.get("check_results", [])
     references = evidence_rows(checks)
     selected = result.get("checks_selected", [])
     skipped = result.get("checks_skipped", [])
-    with st.expander("How ControlPlane reached this decision"):
-        st.markdown("**Verification route**")
-        st.markdown(
-            " ".join(pill(item.replace("_", " ").title()) for item in selected)
-            if selected
-            else "No detector was required for this low-risk route.",
-            unsafe_allow_html=True,
+    st.markdown("**Verification route**")
+    st.markdown(
+        " ".join(pill(item.replace("_", " ").title()) for item in selected)
+        if selected
+        else "No detector was required for this low-risk route.",
+        unsafe_allow_html=True,
+    )
+    stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
+    st.caption(f"Stopped because: {stop}")
+    if skipped:
+        st.caption(
+            "Skipped after the decision was known: "
+            + ", ".join(item.replace("_", " ").title() for item in skipped)
         )
-        stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
-        st.caption(f"Stopped because: {stop}")
-        if skipped:
-            st.caption(
-                "Skipped after the decision was known: "
-                + ", ".join(item.replace("_", " ").title() for item in skipped)
+
+    if risk.get("signals") or risk.get("reasons"):
+        st.markdown("**Risk assessment**")
+        if risk.get("signals"):
+            st.markdown(
+                " ".join(pill(signal) for signal in risk.get("signals", [])),
+                unsafe_allow_html=True,
             )
+        for reason in risk.get("reasons", []):
+            st.markdown(f"- {reason}")
 
-        if risk.get("signals") or risk.get("reasons"):
-            st.markdown("**Risk assessment**")
-            if risk.get("signals"):
-                st.markdown(
-                    " ".join(pill(signal) for signal in risk.get("signals", [])),
-                    unsafe_allow_html=True,
-                )
-            for reason in risk.get("reasons", []):
-                st.markdown(f"- {reason}")
+    st.markdown("**Checks performed**")
+    if checks:
+        st.dataframe(check_rows(checks), use_container_width=True, hide_index=True)
+    else:
+        st.caption("No detector result was recorded.")
 
-        st.markdown("**Checks performed**")
-        if checks:
-            st.dataframe(check_rows(checks), use_container_width=True, hide_index=True)
-        else:
-            st.caption("No detector result was recorded.")
+    if references:
+        st.markdown(f"**Evidence trace ({len(references)} observations)**")
+        st.dataframe(references, use_container_width=True, hide_index=True)
 
-        if references:
-            st.markdown(f"**Evidence trace ({len(references)} observations)**")
-            st.dataframe(references, use_container_width=True, hide_index=True)
 
+def render_result_footer(result: dict[str, Any]) -> None:
     st.caption(
         f"Policy: {result.get('policy_id', '—')} @ {result.get('policy_version', '—')}  ·  "
         f"Cost units: {float(result.get('estimated_cost_units', 0)):.1f}  ·  "
         f"Evaluation: {result.get('evaluation_id', '—')}"
     )
 
+
+def render_result(
+    result: dict[str, Any],
+    *,
+    include_raw: bool = True,
+    progressive: bool = False,
+) -> None:
+    render_decision_banner(result)
+
+    if progressive:
+        render_checker_summary(result.get("check_results", []))
+        with st.expander("More decision details"):
+            render_result_overview(result)
+            render_verification_trace(result)
+            render_result_footer(result)
+    else:
+        render_result_overview(result)
+        with st.expander("How ControlPlane reached this decision"):
+            render_verification_trace(result)
+        render_result_footer(result)
+
     if include_raw:
-        with st.expander("Raw decision trace (technical view)"):
+        with st.expander("Raw decision JSON"):
             st.json(result, expanded=False)
 
 
@@ -289,9 +348,6 @@ st.markdown(
 
 if page == "Run scenario":
     st.subheader("Scenario demonstration")
-    st.caption(
-        "Choose a fixture, see what the host AI produced, then verify it before release or execution."
-    )
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
     selected = st.selectbox(
         "Scenario",
@@ -300,13 +356,26 @@ if page == "Run scenario":
     )
     meta = scenario_meta(selected, PROJECT_ROOT)
     payload = json.loads(selected.read_text(encoding="utf-8"))
-    st.markdown(
-        f'<div class="cp-card"><div class="cp-label">What this demonstrates</div>'
-        f'<div class="cp-value">{html.escape(meta["objective"])}</div>'
-        f'<div style="margin-top:.45rem">{pill("Expected: " + meta["expected"])}'
-        f'{pill(selected.relative_to(PROJECT_ROOT).as_posix())}</div></div>',
-        unsafe_allow_html=True,
+
+    request_key = next(
+        (
+            key
+            for key in ("question", "prompt", "request", "user_input", "input")
+            if isinstance(payload.get(key), str) and payload.get(key)
+        ),
+        None,
     )
+    if request_key:
+        request_label = (
+            "Scenario question" if request_key == "question" else "Scenario request"
+        )
+        st.markdown(
+            '<div class="cp-card">'
+            f'<div class="cp-label">{request_label}</div>'
+            f'<div class="cp-value">{html.escape(payload[request_key])}</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
     st.markdown("### 1 · AI output received")
     preview = candidate_preview(payload)
@@ -314,34 +383,33 @@ if page == "Run scenario":
         '<div class="cp-ai-output">'
         f'<div class="cp-label">{html.escape(preview["label"])}</div>'
         f'<div class="cp-ai-body">{html.escape(preview["body"])}</div>'
-        f'<div class="cp-ai-note">{html.escape(preview["note"])}</div>'
         "</div>",
         unsafe_allow_html=True,
-    )
-    st.caption(
-        "This is the unverified candidate from the host AI. ControlPlane has not approved "
-        "or executed it yet."
     )
 
     actor = payload.get("actor", {})
     context = payload.get("trusted_context", {})
-    st.markdown(
-        compact_grid(
-            [
-                ("Use case", payload.get("use_case", "—")),
-                (
-                    "Event",
-                    str(payload.get("event_type", "—")).replace("_", " ").title(),
-                ),
-                ("Actor", actor.get("role", actor.get("id", "—"))),
-                ("Environment", context.get("environment", "Customer support")),
-            ]
-        ),
-        unsafe_allow_html=True,
-    )
-
     candidate = payload.get("candidate", {})
-    with st.expander("Integration details (trusted context and structured event)"):
+    with st.expander("More scenario details"):
+        st.markdown(f"**Purpose:** {meta['objective']}")
+        st.caption(
+            f"Expected decision: {meta['expected']} · "
+            f"Fixture: {selected.relative_to(PROJECT_ROOT).as_posix()}"
+        )
+        st.markdown(
+            compact_grid(
+                [
+                    ("Use case", payload.get("use_case", "—")),
+                    (
+                        "Event",
+                        str(payload.get("event_type", "—")).replace("_", " ").title(),
+                    ),
+                    ("Actor", actor.get("role", actor.get("id", "—"))),
+                    ("Environment", context.get("environment", "Customer support")),
+                ]
+            ),
+            unsafe_allow_html=True,
+        )
         st.caption(
             "Trusted context comes from the host application, not from the candidate model."
         )
@@ -378,7 +446,8 @@ if page == "Run scenario":
         st.dataframe(
             key_value_rows(context), use_container_width=True, hide_index=True
         )
-        st.markdown("**Raw input contract**")
+
+    with st.expander("Raw scenario JSON"):
         st.json(payload, expanded=False)
 
     if st.button(
@@ -390,8 +459,8 @@ if page == "Run scenario":
         st.session_state["last_scenario"] = str(selected)
 
     if st.session_state.get("last_scenario") == str(selected):
-        st.markdown("### 2 · ControlPlane verification result")
-        render_result(st.session_state["last_result"])
+        st.markdown("### 2 · Middleware decision")
+        render_result(st.session_state["last_result"], progressive=True)
 
 elif page == "Audit trail":
     st.subheader("Audit trail")

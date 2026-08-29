@@ -6,10 +6,11 @@
   attempt full dialect-aware SQL parsing.
 - Claim extraction is a bounded deterministic parser for a few demo policy claims;
   a general claim-extraction model or platform adapter is future work.
-- The model judge is optional and provider-configurable. The offline judge
-  demonstration is explicitly simulated. A separate opt-in Groq integration path is
-  available, but it is not executed by the deterministic baseline and remains subject
-  to provider availability, rate limits, preview-model changes, and network latency.
+- The live model judge is fixed to the Groq endpoint and free-tier demo model. It is
+  enabled only when the ignored, auto-loaded local `.env` supplies `GROQ_API_KEY`.
+  Three judge-routed fixtures are available, but the deterministic baseline remains
+  offline; live results still depend on provider availability, rate limits,
+  preview-model changes, and network latency.
 - Historical routing uses small PoC samples and is illustrative, not statistically calibrated.
 - Historical risk is an adverse-outcome heuristic. Successful `EDIT_REDACT` events do
   not raise it unless reviewer feedback later labels the result incorrect or unsafe.

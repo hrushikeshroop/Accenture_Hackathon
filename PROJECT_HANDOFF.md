@@ -95,15 +95,16 @@ separate local processes.
 
 Repeated cross-verification found real bypasses and design inconsistencies. Each
 confirmed defect was fixed and given regression coverage. The fixture corpus grew
-from 14 to 15 scenarios, and the automated suite grew from its earlier form to the
-current 90 passing tests plus one opt-in live-provider test skipped by default.
+from 14 to 17 scenarios, and the automated suite grew from its earlier form to the
+current 96 passing tests plus three opt-in live-provider cases skipped by default.
 
 ### Current demo-readiness release
 
-The 2026-08-29 release leaves core policy and decision behavior unchanged. It adds a
-human-readable dashboard over the existing JSON contracts, an opt-in real Groq judge
-test/demo, explicit Python 3.11.9 demo pins, this handoff, and a clean rebuilt archive.
-Raw JSON remains available under technical expanders.
+The 2026-08-30 release leaves core policy and decision behavior unchanged. It adds a
+human-readable dashboard over the existing JSON contracts, three opt-in real Groq
+judge demos, auto-loaded local `.env` configuration, explicit Python 3.11.9 demo pins,
+this handoff, and the clean release-builder workflow. Raw JSON remains available under
+technical expanders.
 
 ## 4. Non-negotiable compatibility invariants
 
@@ -121,7 +122,7 @@ These are the baseline. Do not change them incidentally.
 | Customer actions | Identity, eligibility, and explicit approval are required trusted inputs for support proposed actions. |
 | Production actions | Authorization, approval where required, and rollback for mutations are enforced; read-only actions are not falsely treated as mutations. |
 | Judge boundary | The optional model judge sees only a minimized, redacted candidate plus the accumulated retrieval evidence trace. It cannot replace deterministic vetoes. |
-| Default execution | Normal scenarios and normal `pytest` make zero external model calls. A real call requires explicit environment configuration and opt-in. |
+| Default execution | Normal scenarios and normal `pytest` make zero external model calls. A real call requires a local `GROQ_API_KEY` and an explicit live-demo command. |
 | Mock labeling | `mock://local` is always described as simulation; it must never be presented as a real provider call. |
 | Governance | Policy/source versions and checksums remain auditable; exact replay refuses policy/source drift rather than hiding it. |
 | Audit privacy | Candidate, context, feedback, and judge payloads remain recursively redacted before persistence or external transmission. |
@@ -129,7 +130,7 @@ These are the baseline. Do not change them incidentally.
 | Demo isolation | The one-command demo binds API and dashboard to localhost. `--fresh-db` prevents earlier history from changing the walkthrough. |
 | Scope honesty | Retrieval is bounded structured fact lookup, not embedding/semantic document RAG. The rule engine is not a full SQL/shell parser. |
 
-The 15 labelled scenario decisions in section 8 are also compatibility fixtures. If a
+The 17 labelled scenario decisions in section 8 are also compatibility fixtures. If a
 decision intentionally changes, update the relevant policy/requirement and explain
 the reason before updating the label. Never change a label merely to make a failing
 test green.
@@ -200,7 +201,7 @@ policy version used for replay; there are four active use-case profiles.
 
 ## 8. Labelled scenario matrix
 
-Verified on 2026-08-29 with isolated history:
+Verified on 2026-08-30 with isolated history:
 
 | Scenario | Risk | Decision | Stop reason |
 |---|---|---|---|
@@ -215,6 +216,8 @@ Verified on 2026-08-29 with isolated history:
 | `contradicted-refund-answer` | HIGH | REGENERATE | RESOLVED |
 | `no-evidence-answer` | LOW | REGENERATE | TIER_EXHAUSTED |
 | `judge-unavailable-escalation` | HIGH | ESCALATE | HUMAN_REVIEW_REQUIRED |
+| `judge-mixed-evidence-refund` | HIGH | ESCALATE | HUMAN_REVIEW_REQUIRED |
+| `judge-plan-change-promise` | CRITICAL | ESCALATE | HUMAN_REVIEW_REQUIRED |
 | `overlap-pii-contradiction` | HIGH | REGENERATE | RESOLVED |
 | `phone-pii` | HIGH | EDIT_REDACT | RESOLVED |
 | `pii-leak` | HIGH | EDIT_REDACT | RESOLVED |
@@ -251,7 +254,7 @@ reintroduce the earlier behavior.
 | D-19 | Nested SQLite database paths were not initialized. | Audit initialization creates the parent directory before connecting. |
 | D-20 | Dashboard/services could bind beyond localhost and reused old history in a demo. | Launcher binds both services to `127.0.0.1`; `--fresh-db` isolates each walkthrough. |
 | D-21 | The scenario page was dominated by raw JSON. | Candidate, trusted context, decision, reasons, route, checks, evidence, safe output, audit, policies, and metrics now have human-readable views; raw JSON remains in technical expanders. |
-| D-22 | No automated case could deliberately hit a real AI-as-a-service endpoint. | `tests/test_live_judge_integration.py` and `scripts/run_live_judge_demo.py` add an explicit environment-gated network path. A hermetic request-shape test validates evidence, model, JSON mode, authentication, and response parsing without using a real key. Normal tests remain offline. |
+| D-22 | No automated case could deliberately hit a real AI-as-a-service endpoint. | `tests/test_live_judge_integration.py` and `scripts/run_live_judge_demo.py` add three explicit Groq network cases. Hermetic tests validate evidence, model, JSON mode, authentication, and response parsing without a real key. Normal tests remain offline. |
 | D-23 | “Python 3.11 or newer” did not identify the actually verified runtime/dependencies. | `.python-version` records 3.11.9 and `requirements-demo.txt` records the exact verified direct package versions; the broader file remains for compatibility testing. |
 | D-24 | The release ZIP lagged behind source fixes and could contain mutable artifacts. | `scripts/build_release_zip.py` now rebuilds from an allowlisted/filter-checked source tree, scans for Groq-key patterns, and verifies the archive before replacing the prior transfer ZIP. |
 | D-25 | The first readable-UI catalogue incorrectly labelled `reversible-migration` as `BLOCK`. | Corrected to `ESCALATE`; a test now compares every UI expected label to the evaluation corpus. Core decision behavior was never wrong. |
@@ -261,12 +264,12 @@ reintroduce the earlier behavior.
 
 ## 10. Groq external judge integration
 
-The configured provider is Groq, not xAI Grok. As verified against Groq's official
-documentation on 2026-08-29:
+The configured provider is Groq, not xAI Grok. The following demo values are fixed in
+`controlplane/settings.py`, so teammates must not export or override them:
 
 - Chat endpoint: `https://api.groq.com/openai/v1/chat/completions`
 - Model ID: `qwen/qwen3.8-27b`
-- The model is marked Preview and supports JSON Object Mode.
+- The free-tier demo model is marked Preview and supports JSON Object Mode.
 - The default judge HTTP timeout is 10 seconds inside a 12-second support-policy
   ceiling; the dashboard allows 20 seconds for the complete API evaluation.
 
@@ -280,14 +283,13 @@ Revoke exposed keys in the Groq console and create a new key. Never put the repl
 in `.env.example`, source code, a scenario, screenshot, terminal recording, commit, or
 ZIP.
 
-The repository does not auto-load `.env`. Export variables in the shell before
-starting Python. PowerShell example using a new key:
+The only required provider input is `GROQ_API_KEY`. Create an ignored local `.env`
+from the committed teammate template; `python-dotenv` loads it automatically before
+settings are created, while existing shell or CI values retain precedence:
 
 ```powershell
-$env:CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
-$env:CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
-$env:CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
-$env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
+Copy-Item .env.example .env
+# Edit .env and set GROQ_API_KEY to your own key.
 python scripts\run_live_judge_demo.py
 ```
 
@@ -302,18 +304,17 @@ $env:CONTROLPLANE_RUN_LIVE_JUDGE="1"
 pytest -m live -q
 ```
 
-Clear the secret after the demo:
+Clear the opt-in test gate after the demo:
 
 ```powershell
-Remove-Item Env:CONTROLPLANE_JUDGE_API_KEY
-Remove-Item Env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS
 Remove-Item Env:CONTROLPLANE_RUN_LIVE_JUDGE
 ```
 
-The live case uses the unsupported-lifetime-guarantee fixture. Retrieval supplies the
-attempted governed-source trace, the external judge must classify from that trace,
-and the final high-risk result remains safe. A provider error, malformed JSON, or
-timeout is not accepted as a passing live test.
+The live script runs three judge-routed fixtures: an unsupported lifetime guarantee,
+a mixed-evidence refund answer, and an authorized plan change with an unsupported
+price-lock promise. Groq must classify only from each retrieval trace, and every final
+result remains fail-closed. A provider error, malformed JSON, or timeout is not
+accepted as a passing live test.
 
 ## 11. Python and dependency baseline
 
@@ -328,6 +329,7 @@ demo runtime is Python 3.11.9, 64-bit, with:
 - Requests 2.34.2
 - Pytest 8.4.2
 - HTTPX 0.28.1
+- python-dotenv 1.1.1
 
 Use `requirements-demo.txt` for the reproducible hackathon demo. Use
 `requirements.txt` only when intentionally checking newer versions allowed by its
@@ -361,7 +363,7 @@ Follow this sequence for every behavior change:
    labels to hide a failure.
 5. Run Ruff and Pyright.
 6. Run the full normal Pytest suite. It must not make a network call.
-7. Run all scenarios and the deterministic evaluation; compare all 15 decisions.
+7. Run all scenarios and the deterministic evaluation; compare all 17 decisions.
 8. Run policy replay and mock-judge demos.
 9. For UI work, run the Streamlit AppTest and a visual localhost walkthrough.
 10. Run the real-provider test only with an explicitly supplied, non-exposed local
@@ -397,30 +399,31 @@ run it. It must not contain:
 - `.pyc`, editor metadata, local logs, or temporary files
 - `evaluation/results/latest.json` or other machine-local generated results
 
+Keep the secret-free `.env.example`; it is the setup template for teammates.
+
 Keep `evaluation/results/baseline.json`; it is the committed deterministic reference.
 The public GitHub repository remains the source-of-truth submission. The ZIP is a
 clean transfer artifact for local testing, not a replacement for Git history.
 
 ## 14. Current verification evidence
 
-Verified locally on 2026-08-29 with Python 3.11.9 and `requirements-demo.txt`:
+Verified locally on 2026-08-30 with Python 3.11.9 and `requirements-demo.txt`:
 
 - Ruff: passed.
-- Pyright 1.1.413: 0 errors, 0 warnings across 51 files.
-- Pytest: 90 passed, 1 skipped.
-- The skipped test is only the explicitly opt-in real-provider test.
-- Labelled deterministic evaluation: 15/15 expected decisions.
+- Pyright 1.1.413: 0 errors, 0 warnings.
+- Pytest: 96 passed, 3 skipped.
+- The skipped cases are the explicitly opt-in live Groq scenarios.
+- Labelled deterministic evaluation: 17/17 expected decisions.
 - Fixture false-block rate: 0.0.
 - Fixture unsafe-escape rate: 0.0.
-- Average checks executed: 4.4.
+- Average checks executed: 4.59.
 - Deterministic fixture model calls: 0.
 - Policy replay: completed.
 - Explicit mock-judge demo: completed and labelled simulation.
 
-Local timing changes by machine and is not a production performance claim. The real
-Groq call is not included in this release evidence because the supplied credential
-was exposed and therefore not safe to use. It must be rerun locally with a replacement
-key before the recorded demo.
+Local timing changes by machine and is not a production performance claim. Live Groq
+calls are intentionally excluded from offline release evidence; run them locally with
+the team's own ignored `.env` before the recorded demo.
 
 ## 15. Known open limitations
 
@@ -440,7 +443,7 @@ Do not call these solved:
   evident storage, distributed cache invalidation, or hosted security perimeter.
 - Source checksums detect drift but do not archive old source content.
 - Feedback is an illustrative adaptive signal, not statistically calibrated learning.
-- The 15-case corpus cannot establish general model accuracy or production safety.
+- The 17-case corpus cannot establish general model accuracy or production safety.
 - Bias, prompt injection, geography-specific legal rules, multi-turn causal risk,
   load testing, and real enterprise adapters remain roadmap work.
 

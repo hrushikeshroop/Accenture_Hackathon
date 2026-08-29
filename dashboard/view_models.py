@@ -50,6 +50,16 @@ SCENARIO_CATALOG: dict[str, dict[str, str]] = {
         "objective": "Missing evidence fails safely even if the optional judge is unavailable.",
         "expected": "ESCALATE",
     },
+    "support/judge-mixed-evidence-refund.json": {
+        "title": "Mixed-evidence refund promise",
+        "objective": "The judge reviews an unsupported settlement promise alongside a verified refund window.",
+        "expected": "ESCALATE",
+    },
+    "support/judge-plan-change-promise.json": {
+        "title": "Unsupported plan-change promise",
+        "objective": "An authorized plan change still escalates when its pricing promise lacks evidence.",
+        "expected": "ESCALATE",
+    },
     "support/no-evidence-answer.json": {
         "title": "Informational answer with no evidence",
         "objective": "No evidence remains distinct from contradictory evidence.",

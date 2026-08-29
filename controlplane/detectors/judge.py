@@ -31,12 +31,20 @@ class JudgeDetector(Detector):
     ) -> CheckResult:
         started = perf_counter()
         evidence_references = self._retrieval_references(prior_results or [])
-        if not (self.settings.judge_url and self.settings.judge_model):
+        is_local_mock = self.settings.judge_url == "mock://local"
+        if not (
+            self.settings.judge_url
+            and self.settings.judge_model
+            and (self.settings.judge_api_key or is_local_mock)
+        ):
             return CheckResult(
                 detector_id=self.detector_id,
                 status=CheckStatus.UNKNOWN,
                 severity="MEDIUM",
-                reason="The optional secondary model judge is not configured.",
+                reason=(
+                    "The Groq judge is not configured. Add GROQ_API_KEY to the "
+                    "local .env file to enable live judging."
+                ),
                 evidence_state=EvidenceState.NOT_APPLICABLE,
                 latency_ms=(perf_counter() - started) * 1000,
                 estimated_cost_units=0,

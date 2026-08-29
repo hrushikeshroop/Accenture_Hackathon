@@ -31,11 +31,15 @@ streamlit run dashboard\app.py
 6. Run `unauthorized-cancellation.json` to show separate authorization and `BLOCK`.
    Explain that an otherwise eligible account action still requires explicit trusted
    approval; the regression suite also proves the approved path can `ALLOW`.
-7. Open Audit trail to show policy version, rejected/selected sources, source
+7. With a judge provider configured, run `judge-mixed-evidence-refund.json` to show
+   one verified claim and one unsupported promise reaching the evidence-bound judge.
+   Then run `judge-plan-change-promise.json` to show an authorized high-impact action
+   escalating because policy evidence does not support the commercial commitment.
+8. Open Audit trail to show policy version, rejected/selected sources, source
    checksums, stopping reason, latency, cost units, and redacted payloads.
-8. Record reviewer feedback and show its aggregation on the Metrics page. Explain
+9. Record reviewer feedback and show its aggregation on the Metrics page. Explain
    that `FALSE_POSITIVE` removes that adverse outcome from adaptive-history risk.
-9. Run the replay demo to show that replay uses frozen history and does not train
+10. Run the replay demo to show that replay uses frozen history and does not train
    future routing.
 
 ## Additional terminal demonstrations
@@ -54,33 +58,45 @@ historical routing.
 
 ## Optional real Groq judge
 
-Use a newly generated local key. Never record, commit, or package it. The repository
-does not auto-load `.env`; export the variables in the same PowerShell session:
+Use a newly generated local key. Never record, commit, or package it. Groq's endpoint
+and the demo's free-tier model are fixed in code; teammates only need to create the
+ignored local `.env` file and add their own key:
 
 ```powershell
-$env:CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
-$env:CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
-$env:CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
-$env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
+Copy-Item .env.example .env
+# Edit .env and set GROQ_API_KEY to your newly generated key.
 python scripts\run_live_judge_demo.py
+
+$env:CONTROLPLANE_RUN_LIVE_JUDGE="1"
+pytest tests\test_live_judge_integration.py -q
+Remove-Item Env:CONTROLPLANE_RUN_LIVE_JUDGE
 ```
 
 macOS or Linux:
 
 ```bash
-export CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
-export CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
-export CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
-export CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
+cp .env.example .env
+# Edit .env and set GROQ_API_KEY to your newly generated key.
 python scripts/run_live_judge_demo.py
 
 export CONTROLPLANE_RUN_LIVE_JUDGE="1"
 pytest tests/test_live_judge_integration.py -q
-unset CONTROLPLANE_JUDGE_API_KEY CONTROLPLANE_RUN_LIVE_JUDGE
+unset CONTROLPLANE_RUN_LIVE_JUDGE
 ```
 
-The script uses `scenarios/support/judge-unavailable-escalation.json`, the only
-labelled fixture intentionally routed to the external judge. It reports the HTTP
+The terminal script and opt-in integration test evaluate all three labelled fixtures
+that naturally reach the configured Groq judge after deterministic retrieval remains
+unresolved:
+
+- `judge-unavailable-escalation.json` contains a high-risk unsupported lifetime
+  guarantee.
+- `judge-mixed-evidence-refund.json` includes one verified refund-window claim and
+  one unsupported two-hour settlement promise.
+- `judge-plan-change-promise.json` is a fully authorized plan change whose 24-month
+  promotional-price promise has no supporting policy evidence.
+
+All three expect `ESCALATE`: the judge may assess only the supplied retrieval trace,
+and that trace does not establish each promise. The live script reports the HTTP
 timeout, policy budget, measured judge latency, call status, and final safe decision
 without printing the key. Any key previously shared outside the team's
 secret-management boundary must be revoked rather than reused. See
@@ -91,6 +107,6 @@ secret-management boundary must be revoked rather than reused. See
 - Do not claim production readiness or real company integration.
 - Do not claim comprehensive bias, legal compliance, or PII coverage.
 - Do not present the mock judge as a real external model call.
-- Do not imply that the optional live-provider call is part of the deterministic
-  15-case baseline.
-- Describe the evaluation figures as results on 15 labelled PoC scenarios.
+- Do not imply that optional live-provider calls are part of the deterministic
+  17-case baseline.
+- Describe the evaluation figures as results on 17 labelled PoC scenarios.

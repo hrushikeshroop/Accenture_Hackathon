@@ -36,7 +36,7 @@ def test_scenario_event_ids_are_unique_and_contract_valid():
         for path in (PROJECT_ROOT / "scenarios").glob("**/*.json")
     ]
 
-    assert len(events) == 15
+    assert len(events) == 17
     assert len({event.event_id for event in events}) == len(events)
 
 
@@ -58,6 +58,8 @@ def test_scenario_event_ids_are_unique_and_contract_valid():
         ("support/phone-pii.json", DecisionAction.EDIT_REDACT),
         ("support/auto-extracted-supported-faq.json", DecisionAction.ALLOW),
         ("support/judge-unavailable-escalation.json", DecisionAction.ESCALATE),
+        ("support/judge-mixed-evidence-refund.json", DecisionAction.ESCALATE),
+        ("support/judge-plan-change-promise.json", DecisionAction.ESCALATE),
     ],
 )
 def test_expected_scenario_decision(evaluator, scenario, decision):

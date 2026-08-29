@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "event_id": "sup-judge-mixed-refund",
+  "session_id": "support-session-10",
+  "use_case": "support.transactional",
+  "event_type": "candidate_response",
+  "actor": {"id": "support-ai", "role": "ai_agent"},
+  "candidate": {
+    "text": "Your refund window is seven days, and approved refunds always reach your bank account within two hours.",
+    "claims": [
+      {
+        "key": "refund_window_days",
+        "value": 7,
+        "text": "The refund window is seven days."
+      },
+      {
+        "key": "refund_settlement_hours",
+        "value": 2,
+        "text": "Approved refunds always settle within two hours."
+      }
+    ]
+  },
+  "trusted_context": {
+    "policy_sources": ["refunds-v2"],
+    "customer_id": "customer-96",
+    "identity_verified": true
+  },
+  "metadata": {
+    "mock_judge_state": "NO_EVIDENCE"
+  }
+}

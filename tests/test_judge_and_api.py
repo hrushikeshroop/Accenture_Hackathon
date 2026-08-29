@@ -136,11 +136,7 @@ def test_openai_compatible_judge_request_contains_evidence_and_auth(monkeypatch)
 
     monkeypatch.setattr("controlplane.detectors.judge.urlopen", fake_urlopen)
     detector = JudgeDetector(
-        Settings(
-            judge_url="https://api.groq.com/openai/v1/chat/completions",
-            judge_api_key="test-only-key",
-            judge_model="qwen/qwen3.8-27b",
-        )
+        Settings(judge_api_key="test-only-key")
     )
     event = load_scenario("support/judge-unavailable-escalation.json")
     references = [

@@ -90,10 +90,10 @@ The default deterministic path requires no external LLM API key.
 controlplane/       Core contracts, routing, detectors, decisions, audit, API, and metrics
 policies/           Four use-case policy profiles plus one historical policy version
 knowledge/          Approved, stale, and current illustrative source documents
-scenarios/          Fifteen labelled engineering and support events
+scenarios/          Seventeen labelled events, including three judge-routed demos
 evaluation/         Deterministic evaluation harness and committed baseline summary
 dashboard/          Lightweight Streamlit console
-scripts/            Scenario, replay, initialization, and simulated-judge demonstrations
+scripts/            Scenario, replay, initialization, simulated-judge, and live-judge demos
 tests/              Scenario, policy, API, replay, security, UI, and opt-in live tests
 ```
 
@@ -146,17 +146,19 @@ separate launcher sessions.
 
 ## Configuration
 
-Copy `.env.example` values into your environment when needed. Important settings are:
+Create a machine-local `.env` from the teammate-safe template:
 
-```text
-CONTROLPLANE_DB_PATH
-CONTROLPLANE_POLICY_DIR
-CONTROLPLANE_SOURCE_REGISTRY
-CONTROLPLANE_JUDGE_URL
-CONTROLPLANE_JUDGE_API_KEY
-CONTROLPLANE_JUDGE_MODEL
-CONTROLPLANE_JUDGE_TIMEOUT_SECONDS
+```powershell
+Copy-Item .env.example .env
 ```
+
+Set only your own `GROQ_API_KEY` in `.env` to enable live judging. The application
+auto-loads this ignored file through `python-dotenv`; existing shell or CI variables
+still take precedence. Share `.env.example`, never `.env` or a real key.
+
+The Groq chat endpoint (`https://api.groq.com/openai/v1/chat/completions`) and free-tier
+model (`qwen/qwen3.8-27b`) are fixed in code for this demo. Teammates do not need to
+export or configure either value.
 
 The optional external judge expects an OpenAI-compatible chat-completions response
 shape. It receives a minimized, redacted candidate plus the retrieval detector's
@@ -165,25 +167,16 @@ It is never the sole guard for deterministic critical violations. The included
 `mock://local` path is explicitly simulated and must not be presented as a real model
 call.
 
-`.env.example` is a reference only; the project deliberately does not auto-load it.
-Export configuration in the shell before starting the API. The current Groq example
-uses `https://api.groq.com/openai/v1/chat/completions` and
-`qwen/qwen3.8-27b`. Keep the key blank in files and use a newly generated local key.
-
-To demonstrate a real evidence-bound judge call:
+To run all three real evidence-bound judge demonstrations after adding the key:
 
 ```powershell
-$env:CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
-$env:CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
-$env:CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
-$env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
 python scripts\run_live_judge_demo.py
 
 $env:CONTROLPLANE_RUN_LIVE_JUDGE="1"
 pytest -m live -q
 ```
 
-The normal test suite skips this network test. See `PROJECT_HANDOFF.md` for the key
+The normal test suite skips these three network cases. See `PROJECT_HANDOFF.md` for the key
 revocation warning, cleanup commands, and failure semantics.
 
 ## Example API request
@@ -239,11 +232,11 @@ python scripts\run_model_judge_demo.py
 
 Current repository verification:
 
-- 90 automated tests passed; 1 opt-in live-provider test skipped by default.
-- 15 of 15 labelled deterministic fixtures matched their expected actions.
+- 96 automated tests passed; 3 opt-in live Groq cases skipped by default.
+- 17 of 17 labelled deterministic fixtures matched their expected actions.
 - False-block rate was 0.0 on the included labelled fixtures.
 - Unsafe-escape rate was 0.0 on the included labelled fixtures.
-- Average checks executed were 4.40 per scenario.
+- Average checks executed were 4.59 per scenario.
 - The deterministic baseline made zero external model calls.
 
 These figures are fixture-level PoC results, not claims of general accuracy, production latency, or production safety. See `evaluation/results/baseline.json` for the committed summary and rerun the harness for local timing.
@@ -259,6 +252,8 @@ These figures are fixture-level PoC results, not claims of general accuracy, pro
 7. Audit trail - policy version, source decisions, checksums, stopping reason, redaction, latency, and cost units.
 8. Reviewer feedback and metrics - show how typed feedback changes adverse-outcome history semantics.
 9. Replay demonstration - use frozen history without training future routing.
+10. Groq judge demo - run the three judge-routed support cases with one local
+    `GROQ_API_KEY` and show their evidence-bound, fail-closed decisions.
 
 See `DEMO_GUIDE.md` for the full walkthrough.
 

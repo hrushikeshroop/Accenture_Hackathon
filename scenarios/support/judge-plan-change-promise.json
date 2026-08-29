@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "event_id": "sup-judge-plan-change",
+  "session_id": "support-session-11",
+  "use_case": "support.transactional",
+  "event_type": "proposed_action",
+  "actor": {"id": "support-ai", "role": "ai_agent"},
+  "candidate": {
+    "text": "Downgrade the customer to Basic and preserve their promotional monthly price for 24 months.",
+    "tool": "billing_service",
+    "operation": "plan_change",
+    "arguments": {
+      "customer_id": "customer-97",
+      "target_plan": "Basic"
+    },
+    "claims": [
+      {
+        "key": "promotional_rate_lock_months",
+        "value": 24,
+        "text": "The promotional monthly price remains locked for 24 months after downgrade."
+      }
+    ]
+  },
+  "trusted_context": {
+    "policy_sources": ["plan-changes"],
+    "customer_id": "customer-97",
+    "identity_verified": true,
+    "eligible": true,
+    "approval_present": true
+  },
+  "metadata": {
+    "mock_judge_state": "NO_EVIDENCE"
+  }
+}
