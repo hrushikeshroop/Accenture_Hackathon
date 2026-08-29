@@ -8,6 +8,7 @@ import requests
 from streamlit.testing.v1 import AppTest
 
 from dashboard.view_models import (
+    candidate_preview,
     check_rows,
     evidence_rows,
     scenario_meta,
@@ -32,6 +33,13 @@ def test_all_scenarios_have_demo_metadata():
             "BLOCK",
             "ESCALATE",
         }
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        preview = candidate_preview(payload)
+        assert preview["label"] in {"AI response", "AI proposed action"}
+        assert preview["body"]
+        assert preview["note"]
+        if payload["candidate"].get("text"):
+            assert preview["body"] == payload["candidate"]["text"]
 
     for evaluation_path in sorted((PROJECT_ROOT / "evaluation").glob("*-cases.jsonl")):
         for line in evaluation_path.read_text(encoding="utf-8").splitlines():
@@ -76,6 +84,26 @@ def test_check_and_evidence_rows_are_human_readable():
     assert evidence_rows(checks)[0]["Version"] == "2.0"
     assert evidence_rows(checks)[0]["Status"] == "current"
 
+    support_payload = json.loads(
+        (PROJECT_ROOT / "scenarios/support/supported-faq.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    support_preview = candidate_preview(support_payload)
+    assert support_preview["label"] == "AI response"
+    assert support_preview["body"] == support_payload["candidate"]["text"]
+
+    action_payload = json.loads(
+        (PROJECT_ROOT / "scenarios/engineering/safe-file-edit.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    action_preview = candidate_preview(action_payload)
+    assert action_preview["label"] == "AI proposed action"
+    assert "File Edit via Edit" in action_preview["body"]
+    assert "README.md" in action_preview["body"]
+    assert "Improve setup instructions" in action_preview["body"]
+
 
 def test_use_case_metrics_are_flattened_for_a_table():
     rows = use_case_metric_rows(
@@ -97,9 +125,15 @@ def test_dashboard_default_page_loads_without_api_call():
     app.run(timeout=15)
 
     assert not app.exception
-    assert app.subheader[0].value == "Run a labelled scenario"
+    assert app.subheader[0].value == "Scenario demonstration"
     assert len(app.selectbox) == 1
     assert len(app.selectbox[0].options) == 15
+    assert any(
+        "AI output received" in markdown.value for markdown in app.markdown
+    )
+    assert any(
+        "DROP TABLE customers" in markdown.value for markdown in app.markdown
+    )
 
 
 def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
@@ -163,14 +197,20 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     evaluate = next(
         button
         for button in app.button
-        if button.label == "Evaluate through ControlPlane"
+        if button.label == "Run ControlPlane verification"
     )
     evaluate.click().run(timeout=15)
 
     assert not app.exception
-    assert any(metric.label == "Risk" and metric.value == "CRITICAL" for metric in app.metric)
     assert any(
         "ControlPlane decision" in markdown.value and "BLOCK" in markdown.value
         for markdown in app.markdown
     )
-    assert any("Verification checks" in markdown.value for markdown in app.markdown)
+    assert any(
+        "Risk" in markdown.value and "CRITICAL" in markdown.value
+        for markdown in app.markdown
+    )
+    assert any(
+        expander.label == "How ControlPlane reached this decision"
+        for expander in app.expander
+    )

@@ -9,6 +9,7 @@ import requests
 import streamlit as st
 
 from dashboard.view_models import (
+    candidate_preview,
     check_rows,
     evidence_rows,
     key_value_rows,
@@ -47,6 +48,43 @@ st.markdown(
       }
       .cp-label {font-size: .76rem; opacity: .65; text-transform: uppercase; letter-spacing: .06em;}
       .cp-value {font-size: 1.02rem; font-weight: 650; margin-top: .18rem;}
+      .cp-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .55rem;
+        margin: .55rem 0 1rem 0;
+      }
+      .cp-summary-item {
+        min-width: 0;
+        border: 1px solid rgba(128,128,128,.20);
+        background: rgba(99,102,241,.035);
+        border-radius: .7rem;
+        padding: .62rem .72rem;
+      }
+      .cp-summary-value {
+        font-size: .88rem;
+        font-weight: 650;
+        line-height: 1.3;
+        margin-top: .12rem;
+        overflow-wrap: anywhere;
+      }
+      .cp-ai-output {
+        border: 1px solid rgba(14,165,233,.28);
+        border-left: 4px solid rgb(14,165,233);
+        background: rgba(14,165,233,.065);
+        border-radius: .8rem;
+        padding: .9rem 1rem;
+        margin: .45rem 0 .75rem 0;
+      }
+      .cp-ai-body {
+        font-size: 1rem;
+        font-weight: 560;
+        line-height: 1.55;
+        margin: .28rem 0;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+      .cp-ai-note {font-size: .78rem; opacity: .7;}
       .cp-pill {
         display: inline-block; border-radius: 999px; padding: .2rem .65rem;
         margin: .12rem .18rem .12rem 0; font-size: .78rem; font-weight: 650;
@@ -59,6 +97,12 @@ st.markdown(
       .cp-warn {background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.34);}
       .cp-bad {background: rgba(239,68,68,.11); border: 1px solid rgba(239,68,68,.34);}
       div[data-testid="stDataFrame"] {border: 1px solid rgba(128,128,128,.16); border-radius: .6rem;}
+      @media (max-width: 900px) {
+        .cp-summary-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
+      }
+      @media (max-width: 560px) {
+        .cp-summary-grid {grid-template-columns: 1fr;}
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -103,6 +147,17 @@ def pill(value: Any) -> str:
     return f'<span class="cp-pill">{html.escape(str(value))}</span>'
 
 
+def compact_grid(items: list[tuple[str, Any]]) -> str:
+    cards = "".join(
+        '<div class="cp-summary-item">'
+        f'<div class="cp-label">{html.escape(label)}</div>'
+        f'<div class="cp-summary-value">{html.escape(str(value))}</div>'
+        "</div>"
+        for label, value in items
+    )
+    return f'<div class="cp-summary-grid">{cards}</div>'
+
+
 def decision_tone(decision: str) -> str:
     return {
         "ALLOW": "cp-good",
@@ -131,75 +186,77 @@ def render_result(result: dict[str, Any], *, include_raw: bool = True) -> None:
     )
 
     risk = result.get("risk_profile", {})
-    metric_columns = st.columns(6)
-    metric_columns[0].metric("Risk", risk.get("tier", "—"))
-    metric_columns[1].metric("Evidence", result.get("evidence_state", "—"))
-    metric_columns[2].metric("Authorization", result.get("authorization_state", "—"))
-    metric_columns[3].metric("Checks run", result.get("checks_executed", 0))
-    metric_columns[4].metric("Latency", f"{float(result.get('latency_ms', 0)):.1f} ms")
-    metric_columns[5].metric("Model calls", result.get("model_calls", 0))
+    st.markdown(
+        compact_grid(
+            [
+                ("Risk", risk.get("tier", "—")),
+                ("Evidence", result.get("evidence_state", "—")),
+                ("Authorization", result.get("authorization_state", "—")),
+                ("Checks run", result.get("checks_executed", 0)),
+                ("Latency", f"{float(result.get('latency_ms', 0)):.1f} ms"),
+                ("Model calls", result.get("model_calls", 0)),
+            ]
+        ),
+        unsafe_allow_html=True,
+    )
 
-    reason_col, route_col = st.columns([1.15, 0.85])
-    with reason_col:
-        st.markdown("#### Why this decision")
-        reasons = result.get("reasons", [])
-        if reasons:
-            for reason in reasons:
-                st.markdown(f"- {reason}")
-        else:
-            st.caption("No additional decision reason was recorded.")
-        if risk.get("reasons"):
-            with st.expander("Risk signals and reasoning"):
+    st.markdown("#### Why this decision")
+    reasons = result.get("reasons", [])
+    if reasons:
+        for reason in reasons:
+            st.markdown(f"- {reason}")
+    else:
+        st.caption("No additional decision reason was recorded.")
+
+    if result.get("sanitized_output") is not None:
+        st.markdown("#### Safe output released by ControlPlane")
+        st.success(result["sanitized_output"])
+
+    checks = result.get("check_results", [])
+    references = evidence_rows(checks)
+    selected = result.get("checks_selected", [])
+    skipped = result.get("checks_skipped", [])
+    with st.expander("How ControlPlane reached this decision"):
+        st.markdown("**Verification route**")
+        st.markdown(
+            " ".join(pill(item.replace("_", " ").title()) for item in selected)
+            if selected
+            else "No detector was required for this low-risk route.",
+            unsafe_allow_html=True,
+        )
+        stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
+        st.caption(f"Stopped because: {stop}")
+        if skipped:
+            st.caption(
+                "Skipped after the decision was known: "
+                + ", ".join(item.replace("_", " ").title() for item in skipped)
+            )
+
+        if risk.get("signals") or risk.get("reasons"):
+            st.markdown("**Risk assessment**")
+            if risk.get("signals"):
                 st.markdown(
                     " ".join(pill(signal) for signal in risk.get("signals", [])),
                     unsafe_allow_html=True,
                 )
-                for reason in risk.get("reasons", []):
-                    st.markdown(f"- {reason}")
-    with route_col:
-        st.markdown("#### Verification route")
-        stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
-        st.caption(f"Stopped because: {stop}")
-        selected = result.get("checks_selected", [])
-        skipped = result.get("checks_skipped", [])
-        st.markdown("**Selected**")
-        st.markdown(
-            " ".join(pill(item.replace("_", " ").title()) for item in selected)
-            if selected
-            else "None",
-            unsafe_allow_html=True,
-        )
-        if skipped:
-            with st.expander(f"Skipped after early stop ({len(skipped)})"):
-                for item in skipped:
-                    st.write(item.replace("_", " ").title())
+            for reason in risk.get("reasons", []):
+                st.markdown(f"- {reason}")
 
-    st.markdown("#### Verification checks")
-    checks = result.get("check_results", [])
-    if checks:
-        st.dataframe(check_rows(checks), use_container_width=True, hide_index=True)
-    else:
-        st.info("No detector was required for this low-risk route.")
+        st.markdown("**Checks performed**")
+        if checks:
+            st.dataframe(check_rows(checks), use_container_width=True, hide_index=True)
+        else:
+            st.caption("No detector result was recorded.")
 
-    references = evidence_rows(checks)
-    if references:
-        with st.expander(
-            f"Evidence trace ({len(references)} source observations)", expanded=True
-        ):
+        if references:
+            st.markdown(f"**Evidence trace ({len(references)} observations)**")
             st.dataframe(references, use_container_width=True, hide_index=True)
 
-    if result.get("sanitized_output") is not None:
-        st.markdown("#### Safe output after redaction")
-        st.success(result["sanitized_output"])
-
-    policy_col, cost_col, id_col = st.columns(3)
-    policy_col.caption(
-        f"Policy: {result.get('policy_id', '—')} @ {result.get('policy_version', '—')}"
+    st.caption(
+        f"Policy: {result.get('policy_id', '—')} @ {result.get('policy_version', '—')}  ·  "
+        f"Cost units: {float(result.get('estimated_cost_units', 0)):.1f}  ·  "
+        f"Evaluation: {result.get('evaluation_id', '—')}"
     )
-    cost_col.caption(
-        f"Estimated cost units: {float(result.get('estimated_cost_units', 0)):.1f}"
-    )
-    id_col.caption(f"Evaluation ID: {result.get('evaluation_id', '—')}")
 
     if include_raw:
         with st.expander("Raw decision trace (technical view)"):
@@ -231,9 +288,9 @@ st.markdown(
 )
 
 if page == "Run scenario":
-    st.subheader("Run a labelled scenario")
+    st.subheader("Scenario demonstration")
     st.caption(
-        "Choose a fixture, inspect the proposed AI output, then route it through the middleware."
+        "Choose a fixture, see what the host AI produced, then verify it before release or execution."
     )
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
     selected = st.selectbox(
@@ -251,25 +308,43 @@ if page == "Run scenario":
         unsafe_allow_html=True,
     )
 
-    st.markdown("### 1 · Incoming AI event")
-    event_columns = st.columns(4)
-    event_columns[0].metric("Use case", payload.get("use_case", "—"))
-    event_columns[1].metric(
-        "Event", str(payload.get("event_type", "—")).replace("_", " ").title()
+    st.markdown("### 1 · AI output received")
+    preview = candidate_preview(payload)
+    st.markdown(
+        '<div class="cp-ai-output">'
+        f'<div class="cp-label">{html.escape(preview["label"])}</div>'
+        f'<div class="cp-ai-body">{html.escape(preview["body"])}</div>'
+        f'<div class="cp-ai-note">{html.escape(preview["note"])}</div>'
+        "</div>",
+        unsafe_allow_html=True,
     )
+    st.caption(
+        "This is the unverified candidate from the host AI. ControlPlane has not approved "
+        "or executed it yet."
+    )
+
     actor = payload.get("actor", {})
-    event_columns[2].metric("Actor", actor.get("role", actor.get("id", "—")))
     context = payload.get("trusted_context", {})
-    event_columns[3].metric(
-        "Environment", context.get("environment", "Customer support")
+    st.markdown(
+        compact_grid(
+            [
+                ("Use case", payload.get("use_case", "—")),
+                (
+                    "Event",
+                    str(payload.get("event_type", "—")).replace("_", " ").title(),
+                ),
+                ("Actor", actor.get("role", actor.get("id", "—"))),
+                ("Environment", context.get("environment", "Customer support")),
+            ]
+        ),
+        unsafe_allow_html=True,
     )
 
     candidate = payload.get("candidate", {})
-    candidate_col, context_col = st.columns([1.25, 0.75])
-    with candidate_col:
-        st.markdown("#### Candidate output or action")
-        if candidate.get("text"):
-            st.info(candidate["text"])
+    with st.expander("Integration details (trusted context and structured event)"):
+        st.caption(
+            "Trusted context comes from the host application, not from the candidate model."
+        )
         operation_bits = [candidate.get("tool"), candidate.get("operation")]
         operation_bits = [str(item) for item in operation_bits if item]
         if operation_bits:
@@ -286,31 +361,28 @@ if page == "Run scenario":
             )
         claims = candidate.get("claims", [])
         if claims:
-            with st.expander(f"Structured claims ({len(claims)})", expanded=True):
-                st.dataframe(
-                    [
-                        {
-                            "Claim": claim.get("key", "—"),
-                            "Value": str(claim.get("value", "—")),
-                            "Text": claim.get("text", "—"),
-                        }
-                        for claim in claims
-                    ],
-                    use_container_width=True,
-                    hide_index=True,
-                )
-    with context_col:
-        st.markdown("#### Trusted application context")
-        st.caption("Supplied by the host application—not by the candidate model.")
+            st.markdown(f"**Structured claims ({len(claims)})**")
+            st.dataframe(
+                [
+                    {
+                        "Claim": claim.get("key", "—"),
+                        "Value": str(claim.get("value", "—")),
+                        "Text": claim.get("text", "—"),
+                    }
+                    for claim in claims
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+        st.markdown("**Trusted application context**")
         st.dataframe(
             key_value_rows(context), use_container_width=True, hide_index=True
         )
-
-    with st.expander("Raw input contract (technical view)"):
+        st.markdown("**Raw input contract**")
         st.json(payload, expanded=False)
 
     if st.button(
-        "Evaluate through ControlPlane", type="primary", use_container_width=True
+        "Run ControlPlane verification", type="primary", use_container_width=True
     ):
         with st.spinner("Selecting a risk-proportional verification route..."):
             result = api_json("POST", "/evaluate", json=payload, timeout=15)
@@ -318,7 +390,7 @@ if page == "Run scenario":
         st.session_state["last_scenario"] = str(selected)
 
     if st.session_state.get("last_scenario") == str(selected):
-        st.markdown("### 2 · Middleware decision")
+        st.markdown("### 2 · ControlPlane verification result")
         render_result(st.session_state["last_result"])
 
 elif page == "Audit trail":

@@ -113,6 +113,36 @@ def key_value_rows(values: dict[str, Any]) -> list[dict[str, str]]:
     ]
 
 
+def candidate_preview(payload: dict[str, Any]) -> dict[str, str]:
+    """Return an exact, presentation-friendly view of the host AI candidate."""
+    candidate = payload.get("candidate", {})
+    text = candidate.get("text")
+    if text:
+        return {
+            "label": "AI response",
+            "body": str(text),
+            "note": "Candidate response awaiting verification",
+        }
+
+    tool = display_value(candidate.get("tool"))
+    operation = display_value(candidate.get("operation"))
+    title = operation.replace("_", " ").title()
+    if tool != "—":
+        title = f"{title} via {tool.replace('_', ' ').title()}"
+
+    arguments = candidate.get("arguments", {})
+    argument_text = "; ".join(
+        f"{key.replace('_', ' ').title()}: {display_value(value)}"
+        for key, value in arguments.items()
+    )
+    body = title if not argument_text else f"{title} — {argument_text}"
+    return {
+        "label": "AI proposed action",
+        "body": body,
+        "note": "Structured tool request awaiting verification and execution",
+    }
+
+
 def check_rows(checks: list[dict[str, Any]]) -> list[dict[str, str]]:
     return [
         {
