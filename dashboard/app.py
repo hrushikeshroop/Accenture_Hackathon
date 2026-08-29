@@ -390,6 +390,12 @@ if page == "Run scenario":
         "</div>",
         unsafe_allow_html=True,
     )
+    st.caption(
+        "Context: "
+        f"{str(payload.get('use_case', 'unknown')).replace('.', ' / ').replace('_', ' ').title()}"
+        " · Event: "
+        f"{str(payload.get('event_type', 'unknown')).replace('_', ' ').title()}"
+    )
 
     actor = payload.get("actor", {})
     context = payload.get("trusted_context", {})

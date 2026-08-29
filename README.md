@@ -49,13 +49,13 @@ The five outcomes are intentionally different:
 
 - `ALLOW`: mandatory checks resolve without a policy violation.
 - `EDIT_REDACT`: localized sensitive content can be removed safely.
-- `REGENERATE`: a response conflicts with authoritative evidence or lacks usable evidence.
+- `REGENERATE`: a response conflicts with evidence or remains unsupported/uncertain at LOW or MEDIUM risk.
 - `BLOCK`: a critical policy, authorization, secret, or reversibility rule fails.
-- `ESCALATE`: uncertainty, missing approval, or an unresolved high-risk check requires a human.
+- `ESCALATE`: HIGH/CRITICAL uncertainty, missing approval, or an unresolved high-risk check requires a human.
 
 The original concept considered allowing some unsupported low-risk answers with a
-warning. This PoC deliberately tightens that behavior: `NO_EVIDENCE` produces
-`REGENERATE` for LOW/MEDIUM responses and `ESCALATE` for HIGH/CRITICAL cases. The
+warning. This PoC deliberately tightens that behavior: `NO_EVIDENCE` or `UNCERTAIN`
+produces `REGENERATE` for LOW/MEDIUM responses and `ESCALATE` for HIGH/CRITICAL cases. The
 five-action API has no warning-bearing allow state, and the demo does not release an
 unsupported customer-facing claim merely because its immediate impact appears low.
 
@@ -176,8 +176,11 @@ $env:CONTROLPLANE_RUN_LIVE_JUDGE="1"
 pytest -m live -q
 ```
 
-The normal test suite skips these three network cases. See `PROJECT_HANDOFF.md` for the key
-revocation warning, cleanup commands, and failure semantics.
+The three calls deliberately show different proportional outcomes: the MEDIUM-risk
+informational case regenerates automatically, while HIGH/CRITICAL unsupported
+commitments escalate. The normal test suite skips these network cases. See
+`PROJECT_HANDOFF.md` for the key revocation warning, cleanup commands, and failure
+semantics.
 
 ## Example API request
 
@@ -232,11 +235,11 @@ python scripts\run_model_judge_demo.py
 
 Current repository verification:
 
-- 96 automated tests passed; 3 opt-in live Groq cases skipped by default.
+- 98 automated tests passed; 3 opt-in live Groq cases skipped by default.
 - 17 of 17 labelled deterministic fixtures matched their expected actions.
 - False-block rate was 0.0 on the included labelled fixtures.
 - Unsafe-escape rate was 0.0 on the included labelled fixtures.
-- Average checks executed were 4.59 per scenario.
+- Average checks executed were 4.53 per scenario.
 - The deterministic baseline made zero external model calls.
 
 These figures are fixture-level PoC results, not claims of general accuracy, production latency, or production safety. See `evaluation/results/baseline.json` for the committed summary and rerun the harness for local timing.

@@ -19,9 +19,10 @@
     verification; other configured sources remain visible in the audit as rejected attempts.
 12. Policy and source checksums detect content drift for controlled replay. The PoC does
     not provide an enterprise document-versioning service or restore deleted content.
-13. The five-action PoC deliberately maps low/medium `NO_EVIDENCE` responses to
-    `REGENERATE`, not the original concept's illustrative `ALLOW WITH WARNING`, because
-    the current API cannot guarantee warning preservation downstream.
+13. The five-action PoC deliberately maps low/medium `NO_EVIDENCE` or `UNCERTAIN`
+    responses to `REGENERATE`, not the original concept's illustrative
+    `ALLOW WITH WARNING`, because the current API cannot guarantee warning
+    preservation downstream. Uncertain proposed actions still escalate.
 14. A high-impact customer action is eligible for `ALLOW` only when the trusted
     adapter supplies verified identity, eligibility, explicit approval, and a
     policy-relevant structured claim. Missing approval or evidence fails closed.

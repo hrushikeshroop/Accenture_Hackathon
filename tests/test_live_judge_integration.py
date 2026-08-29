@@ -17,15 +17,24 @@ pytestmark = pytest.mark.live
 
 
 @pytest.mark.parametrize(
-    "scenario",
+    ("scenario", "expected_decision"),
     [
-        "support/judge-unavailable-escalation.json",
-        "support/judge-mixed-evidence-refund.json",
-        "support/judge-plan-change-promise.json",
+        (
+            "support/judge-unavailable-escalation.json",
+            DecisionAction.ESCALATE,
+        ),
+        (
+            "support/judge-mixed-evidence-refund.json",
+            DecisionAction.REGENERATE,
+        ),
+        (
+            "support/judge-plan-change-promise.json",
+            DecisionAction.ESCALATE,
+        ),
     ],
 )
 def test_configured_external_judge_is_reached_and_fails_closed(
-    tmp_path: Path, scenario: str
+    tmp_path: Path, scenario: str, expected_decision: DecisionAction
 ):
     """Opt-in network test; standard test runs never send data to a provider."""
     if os.getenv("CONTROLPLANE_RUN_LIVE_JUDGE") != "1":
@@ -57,4 +66,4 @@ def test_configured_external_judge_is_reached_and_fails_closed(
         EvidenceState.NO_EVIDENCE,
         EvidenceState.UNCERTAIN,
     }
-    assert result.decision == DecisionAction.ESCALATE
+    assert result.decision == expected_decision

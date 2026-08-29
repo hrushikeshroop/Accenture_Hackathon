@@ -316,6 +316,19 @@ class ControlPlaneEvaluator:
         pii = by_id.get("pii_detector")
         if pii and pii.status == CheckStatus.FAIL and not event.candidate.claims:
             return True
+        judge = by_id.get("judge_detector")
+        if (
+            judge
+            and judge.model_calls == 1
+            and judge.evidence_state
+            in {
+                EvidenceState.VERIFIED,
+                EvidenceState.CONTRADICTED,
+                EvidenceState.UNCERTAIN,
+                EvidenceState.NO_EVIDENCE,
+            }
+        ):
+            return True
         evidence = DecisionEngine.aggregate_evidence(results)
         if evidence in {EvidenceState.VERIFIED, EvidenceState.CONTRADICTED}:
             return True

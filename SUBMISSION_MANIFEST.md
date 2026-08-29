@@ -13,7 +13,7 @@ The source package contains:
 - `dashboard/` - human-readable Streamlit console with raw technical expanders
 - `scripts/` - one-command demo launcher plus database, scenario, replay, simulated
   judge, three-case opt-in live judge, and clean release-builder commands
-- `tests/` - 96 passing safety, contract, policy, history, replay, API, scenario,
+- `tests/` - 98 passing safety, contract, policy, history, replay, API, scenario,
   adversarial governance, and UI tests plus three skipped opt-in live Groq cases
 - `.env.example` - secret-free teammate template; `python-dotenv` auto-loads each
   ignored local `.env`, where `GROQ_API_KEY` is the only provider secret

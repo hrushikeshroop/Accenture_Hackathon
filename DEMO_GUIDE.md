@@ -32,15 +32,17 @@ and evidence trace; open `Raw decision JSON` only for the final technical view.
    veto, and `BLOCK`.
 4. Run `overlap-pii-contradiction.json` to show that privacy detection does not
    skip retrieval; the contradicted claim produces `REGENERATE`.
-5. Run `no-evidence-answer.json` to show that lack of evidence remains distinct
-   from contradiction.
+5. Run `no-evidence-answer.json` to show that a LOW-risk unsupported answer takes
+   the fast deterministic route and returns `REGENERATE` without paying for a model
+   call.
 6. Run `unauthorized-cancellation.json` to show separate authorization and `BLOCK`.
    Explain that an otherwise eligible account action still requires explicit trusted
    approval; the regression suite also proves the approved path can `ALLOW`.
 7. With a judge provider configured, run `judge-mixed-evidence-refund.json` to show
-   one verified claim and one unsupported promise reaching the evidence-bound judge.
-   Then run `judge-plan-change-promise.json` to show an authorized high-impact action
-   escalating because policy evidence does not support the commercial commitment.
+   a MEDIUM-risk answer reaching the evidence-bound judge and returning automatic
+   `REGENERATE`, not human review. Then run `judge-unavailable-escalation.json` or
+   `judge-plan-change-promise.json` to show the same unresolved-evidence principle
+   escalating at HIGH/CRITICAL risk because the consequence is greater.
 8. Open Audit trail to show policy version, rejected/selected sources, source
    checksums, stopping reason, latency, cost units, and redacted payloads.
 9. Record reviewer feedback and show its aggregation on the Metrics page. Explain
@@ -94,15 +96,18 @@ The terminal script and opt-in integration test evaluate all three labelled fixt
 that naturally reach the configured Groq judge after deterministic retrieval remains
 unresolved:
 
-- `judge-unavailable-escalation.json` contains a high-risk unsupported lifetime
-  guarantee.
+- `judge-unavailable-escalation.json` contains a HIGH-risk unsupported $5,000
+  goodwill-credit guarantee.
 - `judge-mixed-evidence-refund.json` includes one verified refund-window claim and
-  one unsupported two-hour settlement promise.
+  one unsupported two-hour settlement promise. Missing explicit source routing raises
+  it to MEDIUM risk, so Groq is used and policy returns `REGENERATE` without a human.
 - `judge-plan-change-promise.json` is a fully authorized plan change whose 24-month
   promotional-price promise has no supporting policy evidence.
 
-All three expect `ESCALATE`: the judge may assess only the supplied retrieval trace,
-and that trace does not establish each promise. The live script reports the HTTP
+The MEDIUM case expects `REGENERATE`; the HIGH and CRITICAL cases expect `ESCALATE`.
+The judge may assess only the supplied retrieval trace and never authorizes an answer
+from its own knowledge. This contrast demonstrates proportional action rather than
+using human review for every uncertain result. The live script reports the HTTP
 timeout, policy budget, measured judge latency, call status, and final safe decision
 without printing the key. Any key previously shared outside the team's
 secret-management boundary must be revoked rather than reused. See

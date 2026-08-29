@@ -67,9 +67,11 @@ configured `BLOCK` or `ESCALATE` fail mode.
 
 The original concept included an `ALLOW WITH WARNING` example for an unsupported
 low-risk answer. This implementation deliberately does not expose that sixth action.
-`NO_EVIDENCE` returns `REGENERATE` for LOW/MEDIUM responses and `ESCALATE` for
-HIGH/CRITICAL cases because the PoC cannot guarantee that a warning remains attached
-when downstream applications display or act on the answer.
+`NO_EVIDENCE` and `UNCERTAIN` return `REGENERATE` for LOW/MEDIUM responses and
+`ESCALATE` for HIGH/CRITICAL cases. Proposed actions still escalate when uncertain,
+because regeneration alone cannot safely resolve an action authorization or execution
+ambiguity. The PoC cannot guarantee that a warning remains attached when downstream
+applications display or act on an unsupported answer.
 
 Historical risk uses a bounded adverse-outcome heuristic: `BLOCK`, `REGENERATE`,
 `ESCALATE`, `INCORRECT`, and `UNSAFE_ESCAPE` count toward risk; a successful

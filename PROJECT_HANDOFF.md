@@ -95,15 +95,16 @@ separate local processes.
 
 Repeated cross-verification found real bypasses and design inconsistencies. Each
 confirmed defect was fixed and given regression coverage. The fixture corpus grew
-from 14 to 17 scenarios, and the automated suite grew from its earlier form to the
-current 96 passing tests plus three opt-in live-provider cases skipped by default.
+from 14 to 17 scenarios, and the automated suite plus three opt-in live-provider
+cases protect the current behavior.
 
 ### Current demo-readiness release
 
-The 2026-08-30 release leaves core policy and decision behavior unchanged. It adds a
-human-readable dashboard over the existing JSON contracts, three opt-in real Groq
-judge demos, auto-loaded local `.env` configuration, explicit Python 3.11.9 demo pins,
-this handoff, and the clean release-builder workflow. Raw JSON remains available under
+The 2026-08-30 release adds a human-readable dashboard over the existing JSON
+contracts, three opt-in real Groq judge demos, auto-loaded local `.env`
+configuration, explicit Python 3.11.9 demo pins, this handoff, and the clean
+release-builder workflow. It also makes unresolved LOW/MEDIUM responses regenerate
+while HIGH/CRITICAL cases retain human escalation. Raw JSON remains available under
 technical expanders.
 
 ## 4. Non-negotiable compatibility invariants
@@ -118,7 +119,7 @@ These are the baseline. Do not change them incidentally.
 | Authorization | Evidence never grants identity, eligibility, approval, or tool permission. Authorization is evaluated separately. |
 | Typed trust | Trust flags require real JSON booleans. Strings such as `"false"`, numbers, and missing required flags cannot be treated as trusted. |
 | Critical veto | A critical deterministic failure is not averaged away by other passing checks. |
-| Missing evidence | LOW/MEDIUM response claims regenerate; HIGH/CRITICAL cases escalate. Unsupported content is not released with an informal warning. |
+| Unresolved evidence | LOW/MEDIUM response claims with `NO_EVIDENCE` or `UNCERTAIN` regenerate; HIGH/CRITICAL cases and uncertain proposed actions escalate. Unsupported content is not released with an informal warning. |
 | Customer actions | Identity, eligibility, and explicit approval are required trusted inputs for support proposed actions. |
 | Production actions | Authorization, approval where required, and rollback for mutations are enforced; read-only actions are not falsely treated as mutations. |
 | Judge boundary | The optional model judge sees only a minimized, redacted candidate plus the accumulated retrieval evidence trace. It cannot replace deterministic vetoes. |
@@ -216,7 +217,7 @@ Verified on 2026-08-30 with isolated history:
 | `contradicted-refund-answer` | HIGH | REGENERATE | RESOLVED |
 | `no-evidence-answer` | LOW | REGENERATE | TIER_EXHAUSTED |
 | `judge-unavailable-escalation` | HIGH | ESCALATE | HUMAN_REVIEW_REQUIRED |
-| `judge-mixed-evidence-refund` | HIGH | ESCALATE | HUMAN_REVIEW_REQUIRED |
+| `judge-mixed-evidence-refund` | MEDIUM | REGENERATE | TIER_EXHAUSTED |
 | `judge-plan-change-promise` | CRITICAL | ESCALATE | HUMAN_REVIEW_REQUIRED |
 | `overlap-pii-contradiction` | HIGH | REGENERATE | RESOLVED |
 | `phone-pii` | HIGH | EDIT_REDACT | RESOLVED |
@@ -261,6 +262,7 @@ reintroduce the earlier behavior.
 | D-26 | The first evidence table formatter expected `version`/`status`, while the API trace exposes `source_version`/`source_status`. | The formatter now follows the real trace schema (with compatibility fallback), and the UI unit fixture uses the actual field names. |
 | D-27 | The first release builder derived the ZIP root from the checkout directory name, so its package test failed after cloning under the GitHub repository name. | The archive root is now the explicit stable value `controlplane-ai-poc`, independent of local clone or staging-directory names; the release-package test enforces that contract. |
 | D-28 | The judge HTTP client allowed 8 seconds, but support policy budgets stopped evaluation after 1.3-2.2 seconds, so a valid live call could be cancelled prematurely. | The provider timeout is now configurable and defaults to 10 seconds; support policy ceilings are 12 seconds and the dashboard waits 20 seconds. A delayed-provider regression check proves that a response taking longer than the old ceiling completes. Early deterministic exits remain unchanged. |
+| D-29 | The two lifetime-guarantee fixtures displayed the same AI response with different hidden risk contexts, and all three judge demos ended in human escalation. | The HIGH-risk fixture now uses a distinct financial commitment; the MEDIUM mixed-evidence case invokes the judge and automatically regenerates. The UI surfaces workflow context, and regressions check duplicate outputs plus LOW/MEDIUM versus HIGH/CRITICAL proportional actions. |
 
 ## 10. Groq external judge integration
 
@@ -310,11 +312,13 @@ Clear the opt-in test gate after the demo:
 Remove-Item Env:CONTROLPLANE_RUN_LIVE_JUDGE
 ```
 
-The live script runs three judge-routed fixtures: an unsupported lifetime guarantee,
-a mixed-evidence refund answer, and an authorized plan change with an unsupported
-price-lock promise. Groq must classify only from each retrieval trace, and every final
-result remains fail-closed. A provider error, malformed JSON, or timeout is not
-accepted as a passing live test.
+The live script runs three judge-routed fixtures: a HIGH-risk unsupported $5,000
+goodwill-credit guarantee, a MEDIUM-risk mixed-evidence refund answer, and a CRITICAL
+authorized plan change with an unsupported price-lock promise. Groq must classify
+only from each retrieval trace. The MEDIUM response is automatically regenerated;
+the HIGH and CRITICAL commitments require human review. No unresolved case is
+allowed, and a provider error, malformed JSON, or timeout is not accepted as a
+passing live test.
 
 ## 11. Python and dependency baseline
 
@@ -411,12 +415,12 @@ Verified locally on 2026-08-30 with Python 3.11.9 and `requirements-demo.txt`:
 
 - Ruff: passed.
 - Pyright 1.1.413: 0 errors, 0 warnings.
-- Pytest: 96 passed, 3 skipped.
+- Pytest: 98 passed, 3 opt-in live Groq cases skipped.
 - The skipped cases are the explicitly opt-in live Groq scenarios.
 - Labelled deterministic evaluation: 17/17 expected decisions.
 - Fixture false-block rate: 0.0.
 - Fixture unsafe-escape rate: 0.0.
-- Average checks executed: 4.59.
+- Average checks executed: 4.53.
 - Deterministic fixture model calls: 0.
 - Policy replay: completed.
 - Explicit mock-judge demo: completed and labelled simulation.

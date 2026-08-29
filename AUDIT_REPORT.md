@@ -30,12 +30,12 @@ Each item above now has a regression test or an end-to-end launcher check.
 
 - Ruff: all checks passed.
 - Pyright: 0 errors, 0 warnings.
-- Pytest: 96 passed, 3 opt-in live Groq cases skipped.
+- Pytest: 98 passed, 3 opt-in live Groq cases skipped.
 - Labelled evaluation: 17/17 expected decisions.
 - Fixture false-block rate: 0.0.
 - Fixture unsafe-escape rate: 0.0.
 - Deterministic fixture model calls: 0.
-- Average checks executed: 4.59.
+- Average checks executed: 4.53.
 - Scenario files and evaluation labels match exactly, with unique event IDs.
 - Policy replay and the explicitly simulated judge scripts completed.
 - FastAPI and Streamlit started together through the localhost-only fresh-database
@@ -76,7 +76,7 @@ than a bug-free or production-ready security product.
 - Dashboard expectation metadata is cross-checked against the labelled evaluation
   corpus.
 - Updated verification: Ruff passed; Pyright reported 0 errors and 0 warnings; Pytest
-  reported 96 passed and 3 opt-in live Groq cases skipped; all 17 labelled
+  reported 98 passed and 3 opt-in live Groq cases skipped; all 17 labelled
   deterministic decisions matched, with zero model calls in the deterministic run.
 
 See `PROJECT_HANDOFF.md` for the complete history and regression-prevention procedure.

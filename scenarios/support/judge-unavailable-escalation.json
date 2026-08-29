@@ -6,9 +6,18 @@
   "event_type": "candidate_response",
   "actor": {"id": "support-ai", "role": "ai_agent"},
   "candidate": {
-    "text": "Premium customers receive a lifetime service guarantee.",
+    "text": "A $5,000 goodwill credit is guaranteed to reach your bank account today.",
     "claims": [
-      {"key": "lifetime_service_guarantee", "value": true}
+      {
+        "key": "goodwill_credit_amount",
+        "value": 5000,
+        "text": "A $5,000 goodwill credit has been guaranteed."
+      },
+      {
+        "key": "goodwill_credit_settlement_hours",
+        "value": 24,
+        "text": "The credit is guaranteed to reach the customer's bank today."
+      }
     ]
   },
   "trusted_context": {

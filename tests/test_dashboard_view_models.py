@@ -53,6 +53,25 @@ def test_all_scenarios_have_demo_metadata():
             ]
 
 
+def test_candidate_outputs_have_only_the_intentional_claim_extraction_duplicate():
+    by_text: dict[str, list[str]] = {}
+    for path in sorted((PROJECT_ROOT / "scenarios").glob("**/*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        text = payload.get("candidate", {}).get("text")
+        if text:
+            by_text.setdefault(text, []).append(
+                path.relative_to(PROJECT_ROOT / "scenarios").as_posix()
+            )
+
+    duplicates = {text: paths for text, paths in by_text.items() if len(paths) > 1}
+    assert duplicates == {
+        "Customers may request a refund within seven calendar days of purchase.": [
+            "support/auto-extracted-supported-faq.json",
+            "support/supported-faq.json",
+        ]
+    }
+
+
 def test_check_and_evidence_rows_are_human_readable():
     checks = [
         {

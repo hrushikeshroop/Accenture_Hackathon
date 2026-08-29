@@ -89,10 +89,18 @@ class DecisionEngine:
             )
         if evidence == EvidenceState.UNCERTAIN:
             return DecisionOutcome(
-                action=DecisionAction.ESCALATE,
+                action=(
+                    DecisionAction.REGENERATE
+                    if event.event_type == "candidate_response"
+                    and risk.tier.value in {"LOW", "MEDIUM"}
+                    else DecisionAction.ESCALATE
+                ),
                 evidence=evidence,
                 authorization=authorization,
-                reasons=["Available verification is uncertain or conflicting.", *pii_reasons],
+                reasons=[
+                    "Available verification is uncertain or conflicting.",
+                    *pii_reasons,
+                ],
             )
 
         if pii_failed:

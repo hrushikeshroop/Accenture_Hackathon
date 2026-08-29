@@ -128,6 +128,8 @@ required_checks:
 
 **In plain English:** 
 - If it's LOW risk, check PII, extract claims, look them up in the knowledge base.
+- For MEDIUM informational answers, add the evidence-bound LLM judge; an unresolved
+  answer is regenerated automatically rather than sent straight to a human.
 - If it's HIGH/CRITICAL, also ask "Is the customer eligible?" and optionally "Does an LLM agree?"
 
 ---
@@ -200,11 +202,11 @@ They're not vague—they're **intentionally bounded for a PoC** (proof of concep
 
 ```
 Current baseline:
-- 96 automated tests passed; 3 opt-in live Groq cases skipped
+- 98 automated tests passed; 3 opt-in live Groq cases skipped
 - 17 scenarios; 17 matched expected action (100%)
 - False-block rate: 0.0 on test cases
 - Unsafe-escape rate: 0.0 on test cases
-- Avg checks per scenario: 4.59
+- Avg checks per scenario: 4.53
 - Zero external model calls (all deterministic)
 ```
 

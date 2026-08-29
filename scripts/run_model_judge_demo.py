@@ -24,7 +24,7 @@ async def main() -> None:
                 judge_model="simulated-secondary-judge",
             )
         )
-        path = PROJECT_ROOT / "scenarios" / "support" / "judge-unavailable-escalation.json"
+        path = PROJECT_ROOT / "scenarios" / "support" / "judge-mixed-evidence-refund.json"
         event = ControlEvent.model_validate_json(path.read_text(encoding="utf-8"))
         event.metadata["mock_judge_state"] = "UNCERTAIN"
         result = await evaluator.evaluate(event)
@@ -35,9 +35,12 @@ async def main() -> None:
             json.dumps(
                 {
                     "simulation_only": True,
+                    "risk": result.risk_profile.tier.value,
                     "decision": result.decision.value,
+                    "stop_reason": result.stop_reason.value,
                     "model_calls": result.model_calls,
                     "judge_status": judge.status.value,
+                    "judge_evidence_state": judge.evidence_state.value,
                     "judge_reason": judge.reason,
                 },
                 indent=2,

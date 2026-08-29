@@ -14,14 +14,28 @@ from .conftest import load_scenario
 
 
 @pytest.mark.parametrize(
-    ("scenario", "expected_risk"),
+    ("scenario", "expected_risk", "expected_decision", "expected_stop"),
     [
-        ("support/judge-mixed-evidence-refund.json", RiskTier.HIGH),
-        ("support/judge-plan-change-promise.json", RiskTier.CRITICAL),
+        (
+            "support/judge-mixed-evidence-refund.json",
+            RiskTier.MEDIUM,
+            DecisionAction.REGENERATE,
+            StopReason.RESOLVED,
+        ),
+        (
+            "support/judge-plan-change-promise.json",
+            RiskTier.CRITICAL,
+            DecisionAction.ESCALATE,
+            StopReason.HUMAN_REVIEW_REQUIRED,
+        ),
     ],
 )
 def test_demo_scenarios_reach_configured_judge(
-    tmp_path: Path, scenario: str, expected_risk: RiskTier
+    tmp_path: Path,
+    scenario: str,
+    expected_risk: RiskTier,
+    expected_decision: DecisionAction,
+    expected_stop: StopReason,
 ):
     evaluator = ControlPlaneEvaluator(
         Settings(
@@ -38,8 +52,8 @@ def test_demo_scenarios_reach_configured_judge(
     checks = {item.detector_id: item for item in result.check_results}
 
     assert result.risk_profile.tier == expected_risk
-    assert result.decision == DecisionAction.ESCALATE
-    assert result.stop_reason == StopReason.HUMAN_REVIEW_REQUIRED
+    assert result.decision == expected_decision
+    assert result.stop_reason == expected_stop
     assert "judge_detector" in result.checks_selected
     assert "judge_detector" not in result.checks_skipped
     assert result.model_calls == 1
@@ -66,12 +80,49 @@ def test_mixed_evidence_fixture_sends_both_claim_traces_to_judge(tmp_path: Path)
     judge = next(
         item for item in result.check_results if item.detector_id == "judge_detector"
     )
-    references = {item["claim_key"]: item for item in judge.evidence_references}
+    refund_window = [
+        item
+        for item in judge.evidence_references
+        if item["claim_key"] == "refund_window_days"
+    ]
+    settlement = [
+        item
+        for item in judge.evidence_references
+        if item["claim_key"] == "refund_settlement_hours"
+    ]
 
-    assert references["refund_window_days"]["evidence_state"] == "VERIFIED"
-    assert references["refund_window_days"]["used_for_decision"] is True
-    assert references["refund_settlement_hours"]["usable"] is False
-    assert references["refund_settlement_hours"]["used_for_decision"] is False
+    assert any(
+        item["evidence_state"] == "VERIFIED"
+        and item["used_for_decision"] is True
+        for item in refund_window
+    )
+    assert settlement
+    assert all(item["usable"] is False for item in settlement)
+    assert all(item["used_for_decision"] is False for item in settlement)
+
+
+def test_medium_risk_uncertain_judge_result_regenerates_without_human_review(
+    tmp_path: Path,
+):
+    evaluator = ControlPlaneEvaluator(
+        Settings(
+            db_path=tmp_path / "medium-uncertain.db",
+            policy_dir=PROJECT_ROOT / "policies",
+            source_registry=PROJECT_ROOT / "knowledge" / "source_registry.yaml",
+            judge_url="mock://local",
+            judge_model="simulated-judge",
+        )
+    )
+    event = load_scenario("support/judge-mixed-evidence-refund.json")
+    event.metadata["mock_judge_state"] = "UNCERTAIN"
+
+    result = asyncio.run(evaluator.evaluate(event))
+
+    assert result.risk_profile.tier == RiskTier.MEDIUM
+    assert result.evidence_state == EvidenceState.UNCERTAIN
+    assert result.decision == DecisionAction.REGENERATE
+    assert result.stop_reason == StopReason.RESOLVED
+    assert result.model_calls == 1
 
 
 def test_authorized_plan_change_reaches_judge_instead_of_entitlement_veto(

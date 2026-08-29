@@ -58,7 +58,7 @@ def test_scenario_event_ids_are_unique_and_contract_valid():
         ("support/phone-pii.json", DecisionAction.EDIT_REDACT),
         ("support/auto-extracted-supported-faq.json", DecisionAction.ALLOW),
         ("support/judge-unavailable-escalation.json", DecisionAction.ESCALATE),
-        ("support/judge-mixed-evidence-refund.json", DecisionAction.ESCALATE),
+        ("support/judge-mixed-evidence-refund.json", DecisionAction.REGENERATE),
         ("support/judge-plan-change-promise.json", DecisionAction.ESCALATE),
     ],
 )

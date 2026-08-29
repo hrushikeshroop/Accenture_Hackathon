@@ -10,7 +10,7 @@ signal_risks:
   historical_risk: HIGH
 required_checks:
   LOW: [pii_detector, claim_extractor, retrieval_detector]
-  MEDIUM: [pii_detector, claim_extractor, retrieval_detector]
+  MEDIUM: [pii_detector, claim_extractor, retrieval_detector, judge_detector]
   HIGH: [pii_detector, claim_extractor, retrieval_detector, judge_detector]
   CRITICAL: [pii_detector, claim_extractor, retrieval_detector, judge_detector]
 veto_rules: []
