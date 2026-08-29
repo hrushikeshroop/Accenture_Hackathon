@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import json
 from time import perf_counter
-from urllib.request import Request, urlopen
+
+import requests
 
 from controlplane.schemas.check_result import CheckResult, CheckStatus, EvidenceState
 from controlplane.schemas.event import ControlEvent
@@ -138,14 +139,14 @@ class JudgeDetector(Detector):
         headers = {"Content-Type": "application/json"}
         if self.settings.judge_api_key:
             headers["Authorization"] = f"Bearer {self.settings.judge_api_key}"
-        request = Request(
+        response = requests.post(
             self.settings.judge_url,
-            data=json.dumps(payload).encode("utf-8"),
+            json=payload,
             headers=headers,
-            method="POST",
+            timeout=self.settings.judge_timeout_seconds,
         )
-        with urlopen(request, timeout=self.settings.judge_timeout_seconds) as response:
-            body = json.loads(response.read().decode("utf-8"))
+        response.raise_for_status()
+        body = response.json()
         content = body["choices"][0]["message"]["content"]
         parsed = json.loads(content)
         return EvidenceState(parsed["state"]), str(parsed["reason"])

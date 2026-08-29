@@ -21,23 +21,19 @@ from .conftest import load_scenario
 
 
 class FakeChatCompletionResponse:
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return False
+    @staticmethod
+    def raise_for_status() -> None:
+        return None
 
     @staticmethod
-    def read() -> bytes:
+    def json() -> dict[str, Any]:
         content = json.dumps(
             {
                 "state": "NO_EVIDENCE",
                 "reason": "No usable retrieved source establishes the claim.",
             }
         )
-        return json.dumps(
-            {"choices": [{"message": {"content": content}}]}
-        ).encode("utf-8")
+        return {"choices": [{"message": {"content": content}}]}
 
 
 def api_request(method: str, path: str, **kwargs: Any) -> httpx.Response:
@@ -127,14 +123,14 @@ def test_judge_is_not_called_without_retrieval_trace(tmp_path: Path):
 def test_openai_compatible_judge_request_contains_evidence_and_auth(monkeypatch):
     captured: dict[str, Any] = {}
 
-    def fake_urlopen(request, timeout):
-        captured["url"] = request.full_url
-        captured["authorization"] = request.get_header("Authorization")
+    def fake_post(url, *, json, headers, timeout):
+        captured["url"] = url
+        captured["authorization"] = headers.get("Authorization")
         captured["timeout"] = timeout
-        captured["payload"] = json.loads(request.data.decode("utf-8"))
+        captured["payload"] = json
         return FakeChatCompletionResponse()
 
-    monkeypatch.setattr("controlplane.detectors.judge.urlopen", fake_urlopen)
+    monkeypatch.setattr("controlplane.detectors.judge.requests.post", fake_post)
     detector = JudgeDetector(
         Settings(judge_api_key="test-only-key")
     )
