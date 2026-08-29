@@ -66,8 +66,9 @@ python scripts\run_live_judge_demo.py
 
 The script uses the high-risk unsupported-guarantee fixture, reports whether the
 provider call succeeded without printing the key, and preserves the final safe
-decision. The key previously pasted in chat is exposed and must not be reused. See
-`PROJECT_HANDOFF.md` for the full procedure and the opt-in Pytest command.
+decision. Any key previously shared outside the team's secret-management boundary
+must be revoked rather than reused. See `PROJECT_HANDOFF.md` for the full procedure
+and the opt-in Pytest command.
 
 ## Claims to avoid
 

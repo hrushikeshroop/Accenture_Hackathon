@@ -2,17 +2,14 @@
 
 Last updated: 2026-08-29
 
-This is the continuity document for future contributors and AI coding sessions. Read
-it before changing code. It records what the project is trying to prove, which source
-documents are authoritative, how the implementation evolved, every confirmed defect
-that has already been addressed, the behavior that must not regress, the release
-procedure, and the remaining limitations.
+This document records the project scope, source hierarchy, implemented behavior,
+resolved defects, compatibility constraints, release procedure, and remaining
+limitations. Read it before changing middleware behavior.
 
-No source-control history is present in the supplied workspace, so this file does not
-claim to reconstruct byte-for-byte historical versions. The history below is a
-behavioral reconstruction from the Stage 1 and Stage 2 materials, the adversarial
-review supplied during development, `AUDIT_REPORT.md`, the current tests, and the
-current repository. Preserve future releases in Git so exact diffs remain available.
+The repository begins with the current PoC as its initial commit. Earlier development
+history is summarized from the Stage 1 and Stage 2 materials, technical review notes,
+`AUDIT_REPORT.md`, regression tests, and the current implementation. Future changes
+must be committed so their exact diffs and rationale remain traceable.
 
 ## 1. Source-of-truth order
 
@@ -274,10 +271,11 @@ Provider availability and preview identifiers can change. Before the final recor
 demo, check Groq's supported-model page or authenticated `/models` endpoint. Do not
 silently substitute a model because one identifier fails.
 
-The API key pasted into the development chat on 2026-08-29 is considered exposed. It
-was not written to this repository, used for a call, or packaged. Revoke it in the
-Groq console and create a new key. Never put the replacement in `.env.example`, source
-code, a scenario, screenshot, terminal recording, commit, or ZIP.
+Any API key shared outside the team's secret-management boundary must be considered
+compromised. No live credential is stored in this repository or release archive.
+Revoke exposed keys in the Groq console and create a new key. Never put the replacement
+in `.env.example`, source code, a scenario, screenshot, terminal recording, commit, or
+ZIP.
 
 The repository does not auto-load `.env`. Export variables in the shell before
 starting Python. PowerShell example using a new key:
@@ -440,6 +438,6 @@ Do not call these solved:
 - Bias, prompt injection, geography-specific legal rules, multi-turn causal risk,
   load testing, and real enterprise adapters remain roadmap work.
 
-If a future contributor proposes solving any item above, scope and label that work
-explicitly. Do not quietly add features that make the three-student PoC unbelievable
-or change the core story away from ControlPlane.ai middleware.
+Any work on the items above must be scoped and labelled explicitly. Do not quietly add
+features that make the three-student PoC unbelievable or change the core story away
+from ControlPlane.ai middleware.
