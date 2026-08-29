@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "event_id": "eng-destructive-prod",
+  "session_id": "eng-session-2",
+  "use_case": "engineering.production",
+  "event_type": "proposed_action",
+  "actor": {"id": "developer-17", "role": "developer"},
+  "candidate": {
+    "tool": "shell",
+    "operation": "database_command",
+    "arguments": {"command": "DROP TABLE customers"}
+  },
+  "trusted_context": {
+    "environment": "production",
+    "branch": "main",
+    "authorized": true,
+    "approval_present": false,
+    "rollback_available": false
+  }
+}

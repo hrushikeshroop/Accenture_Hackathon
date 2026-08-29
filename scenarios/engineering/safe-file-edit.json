@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "event_id": "eng-safe-edit",
+  "session_id": "eng-session-1",
+  "use_case": "engineering.development",
+  "event_type": "proposed_action",
+  "actor": {"id": "developer-17", "role": "developer"},
+  "candidate": {
+    "tool": "edit",
+    "operation": "file_edit",
+    "arguments": {"path": "README.md", "content": "Improve setup instructions"}
+  },
+  "trusted_context": {
+    "environment": "development",
+    "branch": "feature/docs",
+    "authorized": true,
+    "approval_present": false,
+    "rollback_available": true
+  }
+}

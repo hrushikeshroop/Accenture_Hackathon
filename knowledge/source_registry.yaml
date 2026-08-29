@@ -1,0 +1,47 @@
+sources:
+  refunds-v1:
+    file: refunds-v1-stale.md
+    authority: 0.25
+    status: stale
+    version: "1.0"
+    facts:
+      refund_window_days: 30
+      refunds_after_window: true
+  refunds-v2:
+    file: refunds-v2-approved.md
+    authority: 1.0
+    status: current
+    version: "2.0"
+    facts:
+      refund_window_days: 7
+      refunds_after_window: false
+  plan-changes:
+    file: plan-changes.md
+    authority: 1.0
+    status: current
+    version: "1.0"
+    facts:
+      downgrade_requires_owner: true
+  account-cancellation:
+    file: account-cancellation.md
+    authority: 1.0
+    status: current
+    version: "1.0"
+    facts:
+      cancellation_requires_verified_identity: true
+  privacy-policy:
+    file: privacy-policy.md
+    authority: 1.0
+    status: current
+    version: "1.0"
+    facts:
+      expose_payment_card: false
+      expose_password: false
+  engineering-policy:
+    file: engineering-policy.md
+    authority: 1.0
+    status: current
+    version: "1.0"
+    facts:
+      production_requires_approval: true
+      destructive_production_action_allowed: false

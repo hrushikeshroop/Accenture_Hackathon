@@ -1,0 +1,21 @@
+policy_id: support-informational
+version: "1.1"
+use_case: support.informational
+base_risk: LOW
+latency_budget_ms: 1300
+fail_mode: ESCALATE
+signal_risks:
+  contains_pii: HIGH
+  missing_policy_sources: MEDIUM
+  historical_risk: HIGH
+required_checks:
+  LOW: [pii_detector, claim_extractor, retrieval_detector]
+  MEDIUM: [pii_detector, claim_extractor, retrieval_detector]
+  HIGH: [pii_detector, claim_extractor, retrieval_detector, judge_detector]
+  CRITICAL: [pii_detector, claim_extractor, retrieval_detector, judge_detector]
+veto_rules: []
+source_ids: [refunds-v2, plan-changes, privacy-policy]
+allowed_source_statuses: [current, approved]
+minimum_source_authority: 0.5
+historical_boost_min_samples: 3
+historical_boost_failure_rate: 0.67

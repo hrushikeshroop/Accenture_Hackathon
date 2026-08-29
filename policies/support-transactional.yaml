@@ -1,0 +1,27 @@
+policy_id: support-transactional
+version: "1.0"
+use_case: support.transactional
+base_risk: HIGH
+latency_budget_ms: 2200
+fail_mode: BLOCK
+signal_risks:
+  transactional_event: HIGH
+  high_impact_action: CRITICAL
+  identity_unverified: CRITICAL
+  missing_approval: CRITICAL
+  contains_pii: HIGH
+  missing_policy_sources: HIGH
+  historical_risk: CRITICAL
+required_checks:
+  LOW: [pii_detector, claim_extractor, retrieval_detector]
+  MEDIUM: [pii_detector, claim_extractor, retrieval_detector, entitlement_detector]
+  HIGH: [pii_detector, claim_extractor, retrieval_detector, entitlement_detector, judge_detector]
+  CRITICAL: [pii_detector, claim_extractor, retrieval_detector, entitlement_detector, judge_detector]
+veto_rules:
+  - detector: entitlement_detector
+    statuses: [FAIL]
+    decision: BLOCK
+    reason: The customer is not authorized or eligible for the requested action.
+source_ids: [refunds-v2, plan-changes, account-cancellation, privacy-policy]
+allowed_source_statuses: [current, approved]
+minimum_source_authority: 0.5

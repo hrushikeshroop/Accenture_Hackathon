@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "event_id": "sup-auto-extracted-faq",
+  "session_id": "support-session-8",
+  "use_case": "support.informational",
+  "event_type": "candidate_response",
+  "actor": {"id": "support-ai", "role": "ai_agent"},
+  "candidate": {
+    "text": "Customers may request a refund within seven calendar days of purchase.",
+    "claims": []
+  },
+  "trusted_context": {
+    "policy_sources": ["refunds-v2"],
+    "customer_id": "customer-93",
+    "identity_verified": true
+  }
+}

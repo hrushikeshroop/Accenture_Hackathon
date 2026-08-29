@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+controlplane.db
+evaluation/results/*.json
+evaluation/results/*.csv
+!evaluation/results/baseline.json

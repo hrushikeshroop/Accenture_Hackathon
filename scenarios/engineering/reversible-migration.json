@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "event_id": "eng-reversible-migration",
+  "session_id": "eng-session-3",
+  "use_case": "engineering.production",
+  "event_type": "proposed_action",
+  "actor": {"id": "release-engineer-2", "role": "release_engineer"},
+  "candidate": {
+    "tool": "migration",
+    "operation": "schema_migration",
+    "arguments": {"command": "ALTER TABLE accounts ADD COLUMN region TEXT"}
+  },
+  "trusted_context": {
+    "environment": "production",
+    "branch": "main",
+    "authorized": true,
+    "approval_present": false,
+    "rollback_available": true
+  }
+}

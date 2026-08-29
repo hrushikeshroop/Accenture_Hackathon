@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "event_id": "sup-contradicted-refund",
+  "session_id": "support-session-2",
+  "use_case": "support.transactional",
+  "event_type": "candidate_response",
+  "actor": {"id": "support-ai", "role": "ai_agent"},
+  "candidate": {
+    "text": "You can receive a full refund at any time after cancellation.",
+    "claims": [
+      {"key": "refunds_after_window", "value": true, "text": "Refunds remain available after the window."}
+    ]
+  },
+  "trusted_context": {
+    "policy_sources": ["refunds-v1", "refunds-v2"],
+    "customer_id": "customer-22",
+    "identity_verified": true,
+    "eligible": false
+  }
+}

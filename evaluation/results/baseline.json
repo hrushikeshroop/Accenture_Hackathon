@@ -1,0 +1,14 @@
+{
+  "artifact": "committed deterministic fixture baseline",
+  "dataset": "15 labelled engineering and support scenarios",
+  "history_mode": "isolated",
+  "total": 15,
+  "passed": 15,
+  "scenario_accuracy": 1.0,
+  "false_block_rate": 0.0,
+  "unsafe_escape_rate": 0.0,
+  "total_model_calls": 0,
+  "average_checks_executed": 4.4,
+  "latency_note": "Latency is environment-dependent and intentionally excluded from the committed headline baseline. Run evaluation/run_evaluation.py to measure the local environment.",
+  "scope_note": "These values apply only to the included labelled deterministic fixtures and are not a claim of general accuracy, production safety, or production performance."
+}

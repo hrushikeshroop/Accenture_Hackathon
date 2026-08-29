@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "event_id": "eng-production-read",
+  "session_id": "eng-session-5",
+  "use_case": "engineering.production",
+  "event_type": "proposed_action",
+  "actor": {"id": "release-engineer-2", "role": "release_engineer"},
+  "candidate": {
+    "tool": "repository",
+    "operation": "read_file",
+    "arguments": {"path": "config/production.yaml"}
+  },
+  "trusted_context": {
+    "environment": "production",
+    "branch": "main",
+    "authorized": true,
+    "approval_present": true,
+    "rollback_available": false
+  }
+}

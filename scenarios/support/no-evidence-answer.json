@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "event_id": "sup-no-evidence",
+  "session_id": "support-session-3",
+  "use_case": "support.informational",
+  "event_type": "candidate_response",
+  "actor": {"id": "support-ai", "role": "ai_agent"},
+  "candidate": {
+    "text": "Premium customers receive a lifetime service guarantee.",
+    "claims": [
+      {"key": "lifetime_service_guarantee", "value": true, "text": "Premium includes a lifetime guarantee."}
+    ]
+  },
+  "trusted_context": {
+    "policy_sources": ["refunds-v2", "plan-changes"],
+    "customer_id": "customer-31",
+    "identity_verified": true
+  }
+}

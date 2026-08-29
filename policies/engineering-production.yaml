@@ -1,0 +1,37 @@
+policy_id: engineering-production
+version: "1.0"
+use_case: engineering.production
+base_risk: HIGH
+latency_budget_ms: 1800
+fail_mode: BLOCK
+signal_risks:
+  protected_branch: HIGH
+  production_environment: HIGH
+  destructive_operation: CRITICAL
+  missing_rollback: CRITICAL
+  missing_approval: HIGH
+  unauthorized_actor: CRITICAL
+  exposed_secret: CRITICAL
+required_checks:
+  LOW: [engineering_action, secret_detector]
+  MEDIUM: [engineering_action, secret_detector, permission_detector]
+  HIGH: [engineering_action, secret_detector, permission_detector, reversibility_detector]
+  CRITICAL: [engineering_action, secret_detector, permission_detector, reversibility_detector]
+veto_rules:
+  - detector: engineering_action
+    statuses: [FAIL]
+    decision: BLOCK
+    reason: Destructive production operations are blocked by policy.
+  - detector: secret_detector
+    statuses: [FAIL]
+    decision: BLOCK
+    reason: A secret or credential must not be exposed.
+  - detector: permission_detector
+    statuses: [FAIL]
+    decision: BLOCK
+    reason: The actor is not authorized for the production operation.
+  - detector: reversibility_detector
+    statuses: [FAIL]
+    decision: BLOCK
+    reason: The high-impact action has no verified rollback path.
+source_ids: [engineering-policy]

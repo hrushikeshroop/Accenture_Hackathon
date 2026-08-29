@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "event_id": "sup-phone-pii",
+  "session_id": "support-session-7",
+  "use_case": "support.informational",
+  "event_type": "candidate_response",
+  "actor": {"id": "support-ai", "role": "ai_agent"},
+  "candidate": {
+    "text": "Call the customer at +91 98765 43210.",
+    "claims": []
+  },
+  "trusted_context": {
+    "policy_sources": ["privacy-policy"],
+    "customer_id": "customer-91",
+    "identity_verified": true
+  }
+}

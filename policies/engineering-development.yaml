@@ -1,0 +1,27 @@
+policy_id: engineering-development
+version: "1.0"
+use_case: engineering.development
+base_risk: LOW
+latency_budget_ms: 1200
+fail_mode: ESCALATE
+signal_risks:
+  protected_branch: HIGH
+  destructive_operation: HIGH
+  missing_rollback: HIGH
+  unauthorized_actor: CRITICAL
+  exposed_secret: CRITICAL
+required_checks:
+  LOW: [engineering_action, secret_detector]
+  MEDIUM: [engineering_action, secret_detector, permission_detector]
+  HIGH: [engineering_action, secret_detector, permission_detector, reversibility_detector]
+  CRITICAL: [engineering_action, secret_detector, permission_detector, reversibility_detector]
+veto_rules:
+  - detector: secret_detector
+    statuses: [FAIL]
+    decision: BLOCK
+    reason: A secret or credential must not be committed or exposed.
+  - detector: permission_detector
+    statuses: [FAIL]
+    decision: BLOCK
+    reason: The actor is not authorized for the requested operation.
+source_ids: [engineering-policy]
