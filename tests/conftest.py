@@ -9,6 +9,13 @@ from controlplane.schemas.event import ControlEvent
 from controlplane.settings import PROJECT_ROOT, Settings
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "live: opt-in test that calls the configured external model provider",
+    )
+
+
 @pytest.fixture
 def evaluator(tmp_path: Path) -> ControlPlaneEvaluator:
     return ControlPlaneEvaluator(

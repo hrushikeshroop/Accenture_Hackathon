@@ -25,10 +25,8 @@ INCLUDED_FILES = {
     ".env.example",
     ".gitattributes",
     ".gitignore",
-    ".python-version",
     "README.md",
-    "pytest.ini",
-    "requirements-demo.txt",
+    "README.pdf",
     "requirements.txt",
 }
 EXCLUDED_DIRECTORY_NAMES = {
