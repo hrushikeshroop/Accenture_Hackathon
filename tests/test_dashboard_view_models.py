@@ -173,8 +173,25 @@ def test_verification_route_distinguishes_local_evidence_and_live_judge():
         "CALLED",
         "ESCALATE",
     ]
-    assert route[2]["detail"] == "1 live call · 700.0 ms"
+    assert route[2]["detail"] == "1 live call / 700.0 ms"
     assert route[3]["detail"] == "Human Review Required"
+
+
+def test_dashboard_keeps_the_flat_control_console_visual_language():
+    source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
+
+    forbidden_patterns = {
+        "linear-gradient",
+        "radial-gradient",
+        "cp-section-number",
+        "cp-system-dot",
+        "border-radius: 999",
+        "text-transform: uppercase",
+    }
+    assert not any(pattern in source for pattern in forbidden_patterns)
+    assert "--cp-blue: #0f62fe" in source
+    assert "cp-sidebar-route-nodes" in source
+    assert "cp-check-grid" in source
 
 
 def test_dashboard_default_page_loads_without_api_call():

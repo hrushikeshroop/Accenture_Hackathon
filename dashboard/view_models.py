@@ -123,7 +123,7 @@ def scenario_meta(path: Path, project_root: Path) -> dict[str, str]:
             "title": fallback,
             "prompt": "Evaluate the AI candidate for this scenario.",
             "objective": "Evaluate this fixture.",
-            "expected": "—",
+            "expected": "Not available",
         },
     )
 
@@ -132,7 +132,7 @@ def display_value(value: Any) -> str:
     if isinstance(value, bool):
         return "Yes" if value else "No"
     if value is None:
-        return "—"
+        return "Not available"
     if isinstance(value, (dict, list)):
         return json.dumps(value, ensure_ascii=False, default=str)
     return str(value)
@@ -159,7 +159,7 @@ def candidate_preview(payload: dict[str, Any]) -> dict[str, str]:
     tool = display_value(candidate.get("tool"))
     operation = display_value(candidate.get("operation"))
     title = operation.replace("_", " ").title()
-    if tool != "—":
+    if tool != "Not available":
         title = f"{title} via {tool.replace('_', ' ').title()}"
 
     arguments = candidate.get("arguments", {})
@@ -167,7 +167,7 @@ def candidate_preview(payload: dict[str, Any]) -> dict[str, str]:
         f"{key.replace('_', ' ').title()}: {display_value(value)}"
         for key, value in arguments.items()
     )
-    body = title if not argument_text else f"{title} — {argument_text}"
+    body = title if not argument_text else f"{title}: {argument_text}"
     return {
         "label": "AI proposed action",
         "body": body,
@@ -178,12 +178,14 @@ def candidate_preview(payload: dict[str, Any]) -> dict[str, str]:
 def check_rows(checks: list[dict[str, Any]]) -> list[dict[str, str]]:
     return [
         {
-            "Check": str(check.get("detector_id", "—")).replace("_", " ").title(),
+            "Check": str(check.get("detector_id", "Not available"))
+            .replace("_", " ")
+            .title(),
             "Status": display_value(check.get("status")),
             "Severity": display_value(check.get("severity")),
             "Evidence": display_value(check.get("evidence_state")),
             "Confidence": (
-                "—"
+                "Not available"
                 if check.get("confidence") is None
                 else f"{float(check['confidence']):.2f}"
             ),
@@ -249,13 +251,19 @@ def verification_route(result: dict[str, Any]) -> list[dict[str, Any]]:
             detail = "Not required"
         elif label == "Groq judge" and model_calls == 0:
             state = "NO CALL"
-            detail = f"No live call · {latency_ms:.1f} ms"
+            detail = f"No live call / {latency_ms:.1f} ms"
         elif label == "Groq judge":
             state = "CALLED"
-            detail = f"{model_calls} live call{'s' if model_calls != 1 else ''} · {latency_ms:.1f} ms"
+            detail = (
+                f"{model_calls} live call{'s' if model_calls != 1 else ''} / "
+                f"{latency_ms:.1f} ms"
+            )
         else:
             state = "RAN"
-            detail = f"{len(stage_checks)} check{'s' if len(stage_checks) != 1 else ''} · {latency_ms:.1f} ms"
+            detail = (
+                f"{len(stage_checks)} check{'s' if len(stage_checks) != 1 else ''} / "
+                f"{latency_ms:.1f} ms"
+            )
         route.append(
             {
                 "label": label,
