@@ -173,13 +173,13 @@ def render_decision_banner(result: dict[str, Any]) -> None:
     explanation = {
         "ALLOW": "Mandatory checks resolved. The candidate may continue.",
         "EDIT_REDACT": "Localized sensitive data was removed before release.",
-        "REGENERATE": "The response must be generated again before release.",
+        "REGENERATE": "Return this response for correction; do not release this version.",
         "BLOCK": "A policy veto prevents this action from executing.",
         "ESCALATE": "A human decision is required before continuing.",
     }.get(decision, "The middleware returned an unrecognized outcome.")
     st.markdown(
         f'<div class="cp-decision {decision_tone(decision)}">'
-        f'<div class="cp-label">ControlPlane decision</div>'
+        f'<div class="cp-label">ControlPlane action</div>'
         f'<strong>{html.escape(decision.replace("_", " "))}</strong><br>'
         f'{html.escape(explanation)}</div>',
         unsafe_allow_html=True,
@@ -461,7 +461,7 @@ if page == "Run scenario":
         st.json(payload, expanded=False)
 
     if st.button(
-        "Run ControlPlane verification", type="primary", use_container_width=True
+        "Evaluate AI output", type="primary", use_container_width=True
     ):
         with st.spinner("Selecting a risk-proportional verification route..."):
             result = api_json("POST", "/evaluate", json=payload, timeout=20)
@@ -469,7 +469,7 @@ if page == "Run scenario":
         st.session_state["last_scenario"] = str(selected)
 
     if st.session_state.get("last_scenario") == str(selected):
-        st.markdown("### 2 · Middleware decision")
+        st.markdown("### 2 · Verification result")
         render_result(st.session_state["last_result"], progressive=True)
 
 elif page == "Audit trail":

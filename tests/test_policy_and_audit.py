@@ -281,6 +281,28 @@ def test_feedback_contributes_to_history_and_metrics(evaluator):
     assert metrics["feedback_labels"] == {"UNSAFE_ESCAPE": 1}
 
 
+def test_repeated_regeneration_history_promotes_similar_answers_to_escalation(
+    evaluator,
+):
+    event = load_scenario("support/no-evidence-answer.json")
+
+    first_three = [
+        asyncio.run(evaluator.evaluate(event)).decision for _ in range(3)
+    ]
+    fourth = asyncio.run(evaluator.evaluate(event))
+    historical = next(
+        item
+        for item in fourth.check_results
+        if item.detector_id == "historical_signal"
+    )
+
+    assert first_three == [DecisionAction.REGENERATE] * 3
+    assert fourth.risk_profile.tier == RiskTier.HIGH
+    assert fourth.decision == DecisionAction.ESCALATE
+    assert historical.status == CheckStatus.FAIL
+    assert historical.sample_size == 3
+
+
 def test_successful_edit_redact_does_not_count_as_adverse_history(evaluator):
     event = load_scenario("support/pii-leak.json")
     asyncio.run(evaluator.evaluate(event))

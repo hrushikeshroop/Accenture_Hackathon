@@ -250,15 +250,16 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     evaluate = next(
         button
         for button in app.button
-        if button.label == "Run ControlPlane verification"
+        if button.label == "Evaluate AI output"
     )
     evaluate.click().run(timeout=15)
 
     assert not app.exception
     assert any(
-        "ControlPlane decision" in markdown.value and "BLOCK" in markdown.value
+        "ControlPlane action" in markdown.value and "BLOCK" in markdown.value
         for markdown in app.markdown
     )
+    assert any("Verification result" in markdown.value for markdown in app.markdown)
     assert any("Checks at a glance" in markdown.value for markdown in app.markdown)
     assert any(
         "Risk, latency, and verification depth" in markdown.value

@@ -6,13 +6,13 @@ from pathlib import Path
 from scripts.build_release_zip import build_release_zip
 
 
-def test_release_zip_is_clean_and_contains_handoff(tmp_path: Path):
+def test_release_zip_is_clean_and_contains_submission_readme(tmp_path: Path):
     output = build_release_zip(tmp_path / "ControlPlane-test-release.zip")
 
     with zipfile.ZipFile(output) as archive:
         names = archive.namelist()
         assert archive.testzip() is None
-        assert "controlplane-ai-poc/PROJECT_HANDOFF.md" in names
+        assert "controlplane-ai-poc/README.md" in names
         assert "controlplane-ai-poc/requirements-demo.txt" in names
         assert "controlplane-ai-poc/tests/test_live_judge_integration.py" in names
         assert "controlplane-ai-poc/evaluation/results/baseline.json" in names

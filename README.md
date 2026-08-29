@@ -70,8 +70,6 @@ unsupported customer-facing claim merely because its immediate impact appears lo
 | Feedback loops | Typed reviewer outcomes with latest-label and false-positive semantics |
 | Metrics | Decisions, stops, latency, check count, cost units, model calls, and reviewer feedback |
 
-See `TRACEABILITY.md` for the full mapping to Track 1 complexities.
-
 ## Technology stack
 
 - Python 3.11 or newer; Python 3.11.9 is the verified demo runtime
@@ -96,10 +94,6 @@ dashboard/          Lightweight Streamlit console
 scripts/            Scenario, replay, initialization, simulated-judge, and live-judge demos
 tests/              Scenario, policy, API, replay, security, UI, and opt-in live tests
 ```
-
-Start future maintenance by reading `PROJECT_HANDOFF.md`. It records the behavioral
-history, fixed-defect register, compatibility invariants, provider safety procedure,
-and release checklist.
 
 ## Local setup
 
@@ -155,6 +149,8 @@ Copy-Item .env.example .env
 Set only your own `GROQ_API_KEY` in `.env` to enable live judging. The application
 auto-loads this ignored file through `python-dotenv`; existing shell or CI variables
 still take precedence. Share `.env.example`, never `.env` or a real key.
+Revoke and replace any key that has been pasted into chat, source code, a recording,
+or another location outside the team's secret-management boundary.
 
 The Groq chat endpoint (`https://api.groq.com/openai/v1/chat/completions`) and free-tier
 model (`qwen/qwen3.8-27b`) are fixed in code for this demo. Teammates do not need to
@@ -179,8 +175,22 @@ pytest -m live -q
 The three calls deliberately show different proportional outcomes: the MEDIUM-risk
 informational case regenerates automatically, while HIGH/CRITICAL unsupported
 commitments escalate. The normal test suite skips these network cases. See
-`PROJECT_HANDOFF.md` for the key revocation warning, cleanup commands, and failure
-semantics.
+the verification commands below for the offline suite.
+
+## Regeneration and loop prevention
+
+ControlPlane does not call the source AI again. `POST /evaluate` evaluates one
+candidate and returns `REGENERATE`; the host application decides whether to request
+another answer. Therefore the middleware itself cannot create an infinite request
+loop.
+
+The current PoC records adverse outcomes by scenario fingerprint. Under the active
+informational policy, three prior similar regenerations raise the next attempt to
+HIGH risk, which routes it toward human review. A production adapter should still
+enforce a small end-to-end retry budget—normally one or two attempts—include the
+failure reason and evidence constraints in the retry prompt, reject an identical
+candidate, and escalate or return a safe fallback when the retry/latency budget is
+exhausted.
 
 ## Example API request
 
@@ -235,7 +245,7 @@ python scripts\run_model_judge_demo.py
 
 Current repository verification:
 
-- 98 automated tests passed; 3 opt-in live Groq cases skipped by default.
+- 99 automated tests passed; 3 opt-in live Groq cases skipped by default.
 - 17 of 17 labelled deterministic fixtures matched their expected actions.
 - False-block rate was 0.0 on the included labelled fixtures.
 - Unsafe-escape rate was 0.0 on the included labelled fixtures.
@@ -258,8 +268,6 @@ These figures are fixture-level PoC results, not claims of general accuracy, pro
 10. Groq judge demo - run the three judge-routed support cases with one local
     `GROQ_API_KEY` and show their evidence-bound, fail-closed decisions.
 
-See `DEMO_GUIDE.md` for the full walkthrough.
-
 ## Assumptions and limitations
 
 - Platform integrations are simulated with structured JSON events.
@@ -274,8 +282,6 @@ See `DEMO_GUIDE.md` for the full walkthrough.
 - SQLite and Streamlit are PoC components, not the proposed production architecture.
 - No real external LLM call is required by the deterministic baseline. A separate
   environment-gated Groq integration test and demo are available.
-
-See `ASSUMPTIONS.md` and `KNOWN_LIMITATIONS.md` for the complete lists.
 
 ## Team
 
