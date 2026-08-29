@@ -2,7 +2,7 @@ policy_id: support-informational
 version: "1.0"
 use_case: support.informational
 base_risk: LOW
-latency_budget_ms: 1400
+latency_budget_ms: 12000
 fail_mode: ESCALATE
 signal_risks:
   contains_pii: HIGH

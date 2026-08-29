@@ -2,7 +2,7 @@ policy_id: support-transactional
 version: "1.0"
 use_case: support.transactional
 base_risk: HIGH
-latency_budget_ms: 2200
+latency_budget_ms: 12000
 fail_mode: BLOCK
 signal_risks:
   transactional_event: HIGH

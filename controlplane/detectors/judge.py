@@ -109,6 +109,8 @@ class JudgeDetector(Detector):
         judge_input = self._external_payload(event, evidence_references)
         payload = {
             "model": self.settings.judge_model,
+            "reasoning_effort": "none",
+            "max_completion_tokens": 180,
             "messages": [
                 {
                     "role": "system",
@@ -134,7 +136,7 @@ class JudgeDetector(Detector):
             headers=headers,
             method="POST",
         )
-        with urlopen(request, timeout=8) as response:
+        with urlopen(request, timeout=self.settings.judge_timeout_seconds) as response:
             body = json.loads(response.read().decode("utf-8"))
         content = body["choices"][0]["message"]["content"]
         parsed = json.loads(content)

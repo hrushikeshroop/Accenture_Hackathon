@@ -61,14 +61,30 @@ does not auto-load `.env`; export the variables in the same PowerShell session:
 $env:CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
 $env:CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
 $env:CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
+$env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
 python scripts\run_live_judge_demo.py
 ```
 
-The script uses the high-risk unsupported-guarantee fixture, reports whether the
-provider call succeeded without printing the key, and preserves the final safe
-decision. Any key previously shared outside the team's secret-management boundary
-must be revoked rather than reused. See `PROJECT_HANDOFF.md` for the full procedure
-and the opt-in Pytest command.
+macOS or Linux:
+
+```bash
+export CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
+export CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
+export CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
+export CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
+python scripts/run_live_judge_demo.py
+
+export CONTROLPLANE_RUN_LIVE_JUDGE="1"
+pytest tests/test_live_judge_integration.py -q
+unset CONTROLPLANE_JUDGE_API_KEY CONTROLPLANE_RUN_LIVE_JUDGE
+```
+
+The script uses `scenarios/support/judge-unavailable-escalation.json`, the only
+labelled fixture intentionally routed to the external judge. It reports the HTTP
+timeout, policy budget, measured judge latency, call status, and final safe decision
+without printing the key. Any key previously shared outside the team's
+secret-management boundary must be revoked rather than reused. See
+`PROJECT_HANDOFF.md` for the full procedure and the opt-in Pytest command.
 
 ## Claims to avoid
 

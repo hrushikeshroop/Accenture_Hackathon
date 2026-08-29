@@ -257,6 +257,7 @@ reintroduce the earlier behavior.
 | D-25 | The first readable-UI catalogue incorrectly labelled `reversible-migration` as `BLOCK`. | Corrected to `ESCALATE`; a test now compares every UI expected label to the evaluation corpus. Core decision behavior was never wrong. |
 | D-26 | The first evidence table formatter expected `version`/`status`, while the API trace exposes `source_version`/`source_status`. | The formatter now follows the real trace schema (with compatibility fallback), and the UI unit fixture uses the actual field names. |
 | D-27 | The first release builder derived the ZIP root from the checkout directory name, so its package test failed after cloning under the GitHub repository name. | The archive root is now the explicit stable value `controlplane-ai-poc`, independent of local clone or staging-directory names; the release-package test enforces that contract. |
+| D-28 | The judge HTTP client allowed 8 seconds, but support policy budgets stopped evaluation after 1.3-2.2 seconds, so a valid live call could be cancelled prematurely. | The provider timeout is now configurable and defaults to 10 seconds; support policy ceilings are 12 seconds and the dashboard waits 20 seconds. A delayed-provider regression check proves that a response taking longer than the old ceiling completes. Early deterministic exits remain unchanged. |
 
 ## 10. Groq external judge integration
 
@@ -266,6 +267,8 @@ documentation on 2026-08-29:
 - Chat endpoint: `https://api.groq.com/openai/v1/chat/completions`
 - Model ID: `qwen/qwen3.8-27b`
 - The model is marked Preview and supports JSON Object Mode.
+- The default judge HTTP timeout is 10 seconds inside a 12-second support-policy
+  ceiling; the dashboard allows 20 seconds for the complete API evaluation.
 
 Provider availability and preview identifiers can change. Before the final recorded
 demo, check Groq's supported-model page or authenticated `/models` endpoint. Do not
@@ -284,11 +287,13 @@ starting Python. PowerShell example using a new key:
 $env:CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
 $env:CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
 $env:CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
+$env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
 python scripts\run_live_judge_demo.py
 ```
 
-The demo prints endpoint, model, whether a call was attempted/succeeded, the judge's
-evidence state and reason, and the final safe decision. It never prints the key.
+The demo prints endpoint, model, configured limits, measured judge latency, whether a
+call was attempted/succeeded, the judge's evidence state and reason, and the final
+safe decision. It never prints the key.
 
 Run the corresponding test deliberately:
 
@@ -301,6 +306,7 @@ Clear the secret after the demo:
 
 ```powershell
 Remove-Item Env:CONTROLPLANE_JUDGE_API_KEY
+Remove-Item Env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS
 Remove-Item Env:CONTROLPLANE_RUN_LIVE_JUDGE
 ```
 

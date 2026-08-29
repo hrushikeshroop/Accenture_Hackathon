@@ -385,7 +385,7 @@ if page == "Run scenario":
         "Run ControlPlane verification", type="primary", use_container_width=True
     ):
         with st.spinner("Selecting a risk-proportional verification route..."):
-            result = api_json("POST", "/evaluate", json=payload, timeout=15)
+            result = api_json("POST", "/evaluate", json=payload, timeout=20)
         st.session_state["last_result"] = result
         st.session_state["last_scenario"] = str(selected)
 

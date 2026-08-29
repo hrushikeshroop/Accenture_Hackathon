@@ -155,6 +155,7 @@ CONTROLPLANE_SOURCE_REGISTRY
 CONTROLPLANE_JUDGE_URL
 CONTROLPLANE_JUDGE_API_KEY
 CONTROLPLANE_JUDGE_MODEL
+CONTROLPLANE_JUDGE_TIMEOUT_SECONDS
 ```
 
 The optional external judge expects an OpenAI-compatible chat-completions response
@@ -175,6 +176,7 @@ To demonstrate a real evidence-bound judge call:
 $env:CONTROLPLANE_JUDGE_URL="https://api.groq.com/openai/v1/chat/completions"
 $env:CONTROLPLANE_JUDGE_MODEL="qwen/qwen3.8-27b"
 $env:CONTROLPLANE_JUDGE_API_KEY="paste-your-new-key-locally"
+$env:CONTROLPLANE_JUDGE_TIMEOUT_SECONDS="10"
 python scripts\run_live_judge_demo.py
 
 $env:CONTROLPLANE_RUN_LIVE_JUDGE="1"

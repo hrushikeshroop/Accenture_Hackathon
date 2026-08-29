@@ -11,9 +11,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from controlplane.core.evaluator import ControlPlaneEvaluator
-from controlplane.schemas.event import ControlEvent
-from controlplane.settings import Settings
+from controlplane.core.evaluator import ControlPlaneEvaluator  # noqa: E402
+from controlplane.schemas.event import ControlEvent  # noqa: E402
+from controlplane.settings import Settings  # noqa: E402
 
 REQUIRED_ENVIRONMENT = (
     "CONTROLPLANE_JUDGE_URL",
@@ -49,6 +49,7 @@ def main() -> None:
             )
         )
         result = asyncio.run(evaluator.evaluate(event))
+        policy = evaluator.policies.get_for_use_case(event.use_case)
 
     judge = next(
         (
@@ -68,6 +69,8 @@ def main() -> None:
         "provider_endpoint": os.environ["CONTROLPLANE_JUDGE_URL"],
         "model": os.environ["CONTROLPLANE_JUDGE_MODEL"],
         "api_key_loaded": True,
+        "judge_http_timeout_seconds": evaluator.settings.judge_timeout_seconds,
+        "policy_latency_budget_ms": policy.latency_budget_ms,
         "external_call_recorded": call_recorded,
         "external_call_succeeded": call_succeeded,
         "judge_status": judge.status.value if judge is not None else "NOT_COMPLETED",
@@ -78,6 +81,9 @@ def main() -> None:
             judge.reason
             if judge is not None
             else "The judge did not complete within the policy evaluation route."
+        ),
+        "judge_latency_ms": (
+            round(judge.latency_ms, 2) if judge is not None else None
         ),
         "final_decision": result.decision.value,
         "stop_reason": result.stop_reason.value,

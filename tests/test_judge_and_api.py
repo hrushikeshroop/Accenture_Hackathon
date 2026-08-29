@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +51,9 @@ def api_request(method: str, path: str, **kwargs: Any) -> httpx.Response:
     return asyncio.run(request())
 
 
-def test_mock_judge_path_is_explicit_and_safe(tmp_path: Path):
+def test_mock_judge_path_is_explicit_and_safe(
+    tmp_path: Path, monkeypatch
+):
     evaluator = ControlPlaneEvaluator(
         Settings(
             db_path=tmp_path / "judge.db",
@@ -74,6 +77,33 @@ def test_mock_judge_path_is_explicit_and_safe(tmp_path: Path):
     assert {item["source_id"] for item in judge.evidence_references} >= {
         "refunds-v2"
     }
+
+    def delayed_provider_call(self, event, evidence_references):
+        time.sleep(2.5)
+        return (
+            EvidenceState.NO_EVIDENCE,
+            "No usable retrieved source establishes the claim.",
+        )
+
+    monkeypatch.setattr(JudgeDetector, "_call", delayed_provider_call)
+    delayed_evaluator = ControlPlaneEvaluator(
+        Settings(
+            db_path=tmp_path / "delayed-judge.db",
+            policy_dir=PROJECT_ROOT / "policies",
+            source_registry=PROJECT_ROOT / "knowledge" / "source_registry.yaml",
+            judge_url="https://provider.test/chat/completions",
+            judge_api_key="test-only-key",
+            judge_model="test-model",
+        )
+    )
+    delayed_result = asyncio.run(delayed_evaluator.evaluate(event))
+    delayed_judge = next(
+        item
+        for item in delayed_result.check_results
+        if item.detector_id == "judge_detector"
+    )
+    assert delayed_judge.model_calls == 1
+    assert delayed_result.stop_reason.value != "LATENCY_BUDGET_REACHED"
 
 
 def test_judge_is_not_called_without_retrieval_trace(tmp_path: Path):
@@ -131,9 +161,11 @@ def test_openai_compatible_judge_request_contains_evidence_and_auth(monkeypatch)
     assert "No usable retrieved source" in reason
     assert captured["url"] == "https://api.groq.com/openai/v1/chat/completions"
     assert captured["authorization"] == "Bearer test-only-key"
-    assert captured["timeout"] == 8
+    assert captured["timeout"] == 10
     payload = captured["payload"]
     assert payload["model"] == "qwen/qwen3.8-27b"
+    assert payload["reasoning_effort"] == "none"
+    assert payload["max_completion_tokens"] == 180
     assert payload["response_format"] == {"type": "json_object"}
     assert "refunds-v2" in payload["messages"][1]["content"]
     assert "test-only-key" not in json.dumps(payload)

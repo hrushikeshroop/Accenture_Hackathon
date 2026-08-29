@@ -17,6 +17,13 @@ class Settings:
     judge_url: str = os.getenv("CONTROLPLANE_JUDGE_URL", "")
     judge_api_key: str = os.getenv("CONTROLPLANE_JUDGE_API_KEY", "")
     judge_model: str = os.getenv("CONTROLPLANE_JUDGE_MODEL", "")
+    judge_timeout_seconds: float = float(
+        os.getenv("CONTROLPLANE_JUDGE_TIMEOUT_SECONDS", "10")
+    )
+
+    def __post_init__(self) -> None:
+        if self.judge_timeout_seconds <= 0:
+            raise ValueError("judge_timeout_seconds must be positive")
 
 
 settings = Settings()
