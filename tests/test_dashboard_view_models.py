@@ -13,6 +13,7 @@ from dashboard.view_models import (
     evidence_rows,
     scenario_meta,
     use_case_metric_rows,
+    verification_route,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -48,9 +49,10 @@ def test_all_scenarios_have_demo_metadata():
                 continue
             labelled_case = json.loads(line)
             path = PROJECT_ROOT / labelled_case["scenario"]
-            assert scenario_meta(path, PROJECT_ROOT)["expected"] == labelled_case[
-                "expected_decision"
-            ]
+            assert (
+                scenario_meta(path, PROJECT_ROOT)["expected"]
+                == labelled_case["expected_decision"]
+            )
 
 
 def test_candidate_outputs_have_only_the_intentional_claim_extraction_duplicate():
@@ -140,6 +142,41 @@ def test_use_case_metrics_are_flattened_for_a_table():
     ]
 
 
+def test_verification_route_distinguishes_local_evidence_and_live_judge():
+    route = verification_route(
+        {
+            "decision": "ESCALATE",
+            "stop_reason": "HUMAN_REVIEW_REQUIRED",
+            "check_results": [
+                {
+                    "detector_id": "pii_detector",
+                    "latency_ms": 1.2,
+                    "model_calls": 0,
+                },
+                {
+                    "detector_id": "retrieval_detector",
+                    "latency_ms": 2.3,
+                    "model_calls": 0,
+                },
+                {
+                    "detector_id": "judge_detector",
+                    "latency_ms": 700,
+                    "model_calls": 1,
+                },
+            ],
+        }
+    )
+
+    assert [stage["state"] for stage in route] == [
+        "RAN",
+        "RAN",
+        "CALLED",
+        "ESCALATE",
+    ]
+    assert route[2]["detail"] == "1 live call · 700.0 ms"
+    assert route[3]["detail"] == "Human Review Required"
+
+
 def test_dashboard_default_page_loads_without_api_call():
     app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
     app.run(timeout=15)
@@ -149,16 +186,13 @@ def test_dashboard_default_page_loads_without_api_call():
     assert len(app.selectbox) == 1
     assert len(app.selectbox[0].options) == 17
     assert any(
-        "AI input and candidate output" in markdown.value
-        for markdown in app.markdown
+        "AI input and candidate output" in markdown.value for markdown in app.markdown
     )
     assert any(
         "Reset the production environment" in markdown.value
         for markdown in app.markdown
     )
-    assert any(
-        "DROP TABLE customers" in markdown.value for markdown in app.markdown
-    )
+    assert any("DROP TABLE customers" in markdown.value for markdown in app.markdown)
     assert {expander.label for expander in app.expander} == {
         "More scenario details",
         "Raw scenario JSON",
@@ -223,6 +257,7 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "policy_id": "engineering-production",
         "policy_version": "1.0",
         "policy_checksum": "test-checksum",
+        "latency_budget_ms": 100,
         "latency_ms": 1.25,
         "estimated_cost_units": 2,
         "model_calls": 0,
@@ -230,6 +265,13 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "source_versions": {},
         "source_checksums": {},
         "sanitized_output": None,
+        "action_guidance": {
+            "summary": "Do not execute the action.",
+            "retryable": False,
+            "max_regeneration_attempts": 0,
+            "if_retry_exhausted": None,
+            "human_review_required": False,
+        },
     }
 
     class FakeResponse:
@@ -248,9 +290,7 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
     app.run(timeout=15)
     evaluate = next(
-        button
-        for button in app.button
-        if button.label == "Evaluate AI output"
+        button for button in app.button if button.label == "Evaluate AI output"
     )
     evaluate.click().run(timeout=15)
 
@@ -261,12 +301,10 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     )
     assert any("Verification result" in markdown.value for markdown in app.markdown)
     assert any("Checks at a glance" in markdown.value for markdown in app.markdown)
+    assert any("Outcome at a glance" in markdown.value for markdown in app.markdown)
+    assert any("Verification path" in markdown.value for markdown in app.markdown)
     assert any(
-        "Risk, latency, and verification depth" in markdown.value
-        for markdown in app.markdown
-    )
-    assert any(
-        "Latency" in markdown.value and "1.2 ms" in markdown.value
+        "Policy budget" in markdown.value and "100 ms" in markdown.value
         for markdown in app.markdown
     )
     assert any(

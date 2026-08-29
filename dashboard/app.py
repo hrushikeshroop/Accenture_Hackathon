@@ -17,6 +17,7 @@ from dashboard.view_models import (
     policy_veto_rows,
     scenario_meta,
     use_case_metric_rows,
+    verification_route,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -92,6 +93,26 @@ st.markdown(
       }
       .cp-decision {border-radius: .85rem; padding: .9rem 1rem; margin: .7rem 0 1rem 0;}
       .cp-decision strong {font-size: 1.18rem;}
+      .cp-route {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+        align-items: stretch;
+        gap: .35rem;
+        margin: .55rem 0 1rem 0;
+      }
+      .cp-route-step {
+        min-width: 0;
+        border: 1px solid rgba(128,128,128,.22);
+        border-radius: .7rem;
+        padding: .62rem .68rem;
+        background: rgba(99,102,241,.035);
+      }
+      .cp-route-state {font-weight: 720; font-size: .9rem; margin-top: .12rem;}
+      .cp-route-detail {font-size: .74rem; opacity: .72; margin-top: .12rem;}
+      .cp-route-arrow {align-self: center; opacity: .45; font-size: 1.15rem;}
+      .cp-route-step[data-state="SKIPPED"] {opacity: .55; background: transparent;}
+      .cp-route-step[data-state="CALLED"] {border-color: rgba(168,85,247,.42); background: rgba(168,85,247,.08);}
+      .cp-route-step[data-label="Decision"] {border-color: rgba(14,165,233,.38); background: rgba(14,165,233,.07);}
       .cp-good {background: rgba(16,185,129,.11); border: 1px solid rgba(16,185,129,.32);}
       .cp-edit {background: rgba(14,165,233,.11); border: 1px solid rgba(14,165,233,.32);}
       .cp-warn {background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.34);}
@@ -99,6 +120,8 @@ st.markdown(
       div[data-testid="stDataFrame"] {border: 1px solid rgba(128,128,128,.16); border-radius: .6rem;}
       @media (max-width: 900px) {
         .cp-summary-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
+        .cp-route {grid-template-columns: 1fr;}
+        .cp-route-arrow {display: none;}
       }
       @media (max-width: 560px) {
         .cp-summary-grid {grid-template-columns: 1fr;}
@@ -180,8 +203,30 @@ def render_decision_banner(result: dict[str, Any]) -> None:
     st.markdown(
         f'<div class="cp-decision {decision_tone(decision)}">'
         f'<div class="cp-label">ControlPlane action</div>'
-        f'<strong>{html.escape(decision.replace("_", " "))}</strong><br>'
-        f'{html.escape(explanation)}</div>',
+        f"<strong>{html.escape(decision.replace('_', ' '))}</strong><br>"
+        f"{html.escape(explanation)}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_adaptive_route(result: dict[str, Any]) -> None:
+    st.markdown("#### Verification path")
+    stages = verification_route(result)
+    parts: list[str] = []
+    for index, stage in enumerate(stages):
+        if index:
+            parts.append('<div class="cp-route-arrow">→</div>')
+        parts.append(
+            '<div class="cp-route-step" '
+            f'data-state="{html.escape(str(stage["state"]))}" '
+            f'data-label="{html.escape(str(stage["label"]))}">'
+            f'<div class="cp-label">{html.escape(str(stage["label"]))}</div>'
+            f'<div class="cp-route-state">{html.escape(str(stage["state"]))}</div>'
+            f'<div class="cp-route-detail">{html.escape(str(stage["detail"]))}</div>'
+            "</div>"
+        )
+    st.markdown(
+        f'<div class="cp-route">{"".join(parts)}</div>',
         unsafe_allow_html=True,
     )
 
@@ -223,7 +268,12 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
 
 def render_result_overview(result: dict[str, Any]) -> None:
     risk = result.get("risk_profile", {})
-    st.markdown("#### Risk, latency, and verification depth")
+    latency_ms = float(result.get("latency_ms", 0))
+    latency_budget_ms = float(result.get("latency_budget_ms", 0))
+    budget_used = (
+        latency_ms / latency_budget_ms * 100 if latency_budget_ms > 0 else None
+    )
+    st.markdown("#### Outcome at a glance")
     st.markdown(
         compact_grid(
             [
@@ -231,12 +281,25 @@ def render_result_overview(result: dict[str, Any]) -> None:
                 ("Evidence", result.get("evidence_state", "—")),
                 ("Authorization", result.get("authorization_state", "—")),
                 ("Checks run", result.get("checks_executed", 0)),
-                ("Latency", f"{float(result.get('latency_ms', 0)):.1f} ms"),
+                ("Latency", f"{latency_ms:.1f} ms"),
+                (
+                    "Policy budget",
+                    f"{latency_budget_ms:.0f} ms" if latency_budget_ms > 0 else "—",
+                ),
+                (
+                    "Budget used",
+                    f"{budget_used:.1f}%" if budget_used is not None else "—",
+                ),
                 ("Model calls", result.get("model_calls", 0)),
             ]
         ),
         unsafe_allow_html=True,
     )
+    if budget_used is not None:
+        st.progress(
+            min(max(budget_used / 100, 0.0), 1.0),
+            text=f"Latency budget: {latency_ms:.1f} of {latency_budget_ms:.0f} ms",
+        )
     stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
     cost = float(result.get("estimated_cost_units", 0))
     st.caption(f"Verification stopped: {stop} · Estimated cost units: {cost:.1f}")
@@ -252,6 +315,63 @@ def render_result_overview(result: dict[str, Any]) -> None:
     if result.get("sanitized_output") is not None:
         st.markdown("#### Safe output released by ControlPlane")
         st.success(result["sanitized_output"])
+
+    guidance = result.get("action_guidance", {})
+    if guidance.get("retryable"):
+        exhausted = str(guidance.get("if_retry_exhausted", "ESCALATE")).replace(
+            "_", " "
+        )
+        st.warning(
+            f"Retry contract: regenerate at most "
+            f"{guidance.get('max_regeneration_attempts', 1)} time. "
+            f"If still unresolved: {exhausted}."
+        )
+
+
+def render_human_review_handoff(result: dict[str, Any]) -> None:
+    guidance = result.get("action_guidance", {})
+    if not guidance.get("human_review_required"):
+        return
+
+    evaluation_id = str(result.get("evaluation_id", ""))
+    with st.expander("Human review handoff"):
+        st.caption(
+            "The candidate remains on hold. This records a reviewer outcome in the "
+            "existing feedback and audit store; it does not silently release the candidate."
+        )
+        with st.form(f"human-review-{evaluation_id}"):
+            reviewer_id = st.text_input(
+                "Reviewer ID", "demo-reviewer", key=f"reviewer-{evaluation_id}"
+            )
+            outcome = st.selectbox(
+                "Review outcome",
+                ["Confirm escalation", "Override decision", "False positive"],
+                key=f"outcome-{evaluation_id}",
+            )
+            note = st.text_area("Reviewer note", key=f"review-note-{evaluation_id}")
+            submitted = st.form_submit_button(
+                "Record review outcome", use_container_width=True
+            )
+        if submitted:
+            if not reviewer_id.strip() or not note.strip():
+                st.error("Reviewer ID and a short reviewer note are required.")
+            else:
+                label = {
+                    "Confirm escalation": "CORRECT",
+                    "Override decision": "INCORRECT",
+                    "False positive": "FALSE_POSITIVE",
+                }[outcome]
+                api_json(
+                    "POST",
+                    "/feedback",
+                    json={
+                        "evaluation_id": evaluation_id,
+                        "reviewer_id": reviewer_id,
+                        "label": label,
+                        "reason": note,
+                    },
+                )
+                st.success("Reviewer outcome recorded in the audit trail.")
 
 
 def render_verification_trace(result: dict[str, Any]) -> None:
@@ -311,10 +431,12 @@ def render_result(
     progressive: bool = False,
 ) -> None:
     render_decision_banner(result)
+    render_adaptive_route(result)
 
     if progressive:
         render_result_overview(result)
         render_checker_summary(result.get("check_results", []))
+        render_human_review_handoff(result)
         with st.expander("More decision details"):
             render_verification_trace(result)
             render_result_footer(result)
@@ -453,16 +575,12 @@ if page == "Run scenario":
                 hide_index=True,
             )
         st.markdown("**Trusted application context**")
-        st.dataframe(
-            key_value_rows(context), use_container_width=True, hide_index=True
-        )
+        st.dataframe(key_value_rows(context), use_container_width=True, hide_index=True)
 
     with st.expander("Raw scenario JSON"):
         st.json(payload, expanded=False)
 
-    if st.button(
-        "Evaluate AI output", type="primary", use_container_width=True
-    ):
+    if st.button("Evaluate AI output", type="primary", use_container_width=True):
         with st.spinner("Selecting a risk-proportional verification route..."):
             result = api_json("POST", "/evaluate", json=payload, timeout=20)
         st.session_state["last_result"] = result
@@ -648,7 +766,9 @@ else:
         )
         if st.button("Record feedback", type="primary", use_container_width=True):
             if not reviewer_id.strip() or not reason.strip():
-                st.warning("Reviewer ID and a short reason are required in the demo console.")
+                st.warning(
+                    "Reviewer ID and a short reason are required in the demo console."
+                )
             else:
                 api_json(
                     "POST",
