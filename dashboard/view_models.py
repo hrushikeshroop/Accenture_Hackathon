@@ -217,7 +217,68 @@ def evidence_rows(checks: list[dict[str, Any]]) -> list[dict[str, str]]:
     return rows
 
 
-def use_case_metric_rows(by_use_case: dict[str, dict[str, int]]) -> list[dict[str, Any]]:
+def verification_route(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """Summarize the adaptive route without implying that skipped tiers ran."""
+    checks = result.get("check_results", [])
+    groups = [
+        (
+            "Local checks",
+            {
+                "historical_signal",
+                "engineering_action",
+                "secret_detector",
+                "permission_detector",
+                "reversibility_detector",
+                "pii_detector",
+                "claim_extractor",
+                "entitlement_detector",
+            },
+        ),
+        ("Governed evidence", {"retrieval_detector"}),
+        ("Groq judge", {"judge_detector"}),
+    ]
+    route: list[dict[str, Any]] = []
+    for label, detector_ids in groups:
+        stage_checks = [
+            check for check in checks if check.get("detector_id") in detector_ids
+        ]
+        latency_ms = sum(float(check.get("latency_ms", 0)) for check in stage_checks)
+        model_calls = sum(int(check.get("model_calls", 0)) for check in stage_checks)
+        if not stage_checks:
+            state = "SKIPPED"
+            detail = "Not required"
+        elif label == "Groq judge" and model_calls == 0:
+            state = "NO CALL"
+            detail = f"No live call · {latency_ms:.1f} ms"
+        elif label == "Groq judge":
+            state = "CALLED"
+            detail = f"{model_calls} live call{'s' if model_calls != 1 else ''} · {latency_ms:.1f} ms"
+        else:
+            state = "RAN"
+            detail = f"{len(stage_checks)} check{'s' if len(stage_checks) != 1 else ''} · {latency_ms:.1f} ms"
+        route.append(
+            {
+                "label": label,
+                "state": state,
+                "detail": detail,
+            }
+        )
+
+    route.append(
+        {
+            "label": "Decision",
+            "state": display_value(result.get("decision")),
+            "detail": display_value(result.get("stop_reason"))
+            .replace("_", " ")
+            .title(),
+        }
+    )
+    return route
+
+
+def use_case_metric_rows(
+    by_use_case: dict[str, dict[str, int]],
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for use_case, decisions in sorted(by_use_case.items()):
         row: dict[str, Any] = {"Use case": use_case, "Total": sum(decisions.values())}

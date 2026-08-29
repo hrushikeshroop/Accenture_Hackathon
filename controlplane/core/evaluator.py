@@ -10,6 +10,7 @@ from controlplane.detectors.judge import JudgeDetector
 from controlplane.detectors.registry import DetectorRegistry
 from controlplane.schemas.check_result import CheckResult, CheckStatus, EvidenceState
 from controlplane.schemas.decision import (
+    ActionGuidance,
     DecisionAction,
     EvaluationResult,
     StopReason,
@@ -138,6 +139,7 @@ class ControlPlaneEvaluator:
             policy_id=policy.policy_id,
             policy_version=policy.version,
             policy_checksum=self.policies.checksum(policy),
+            latency_budget_ms=policy.latency_budget_ms,
             latency_ms=latency_ms,
             estimated_cost_units=sum(result.estimated_cost_units for result in results),
             model_calls=sum(result.model_calls for result in results),
@@ -145,6 +147,7 @@ class ControlPlaneEvaluator:
             source_versions=self._source_versions(results),
             source_checksums=self._source_checksums(results),
             sanitized_output=outcome.sanitized_output,
+            action_guidance=self._action_guidance(outcome.action),
         )
         self.audit.save(
             evaluation_id=evaluation.evaluation_id,
@@ -343,3 +346,32 @@ class ControlPlaneEvaluator:
                 for result in relevant
             )
         return False
+
+    @staticmethod
+    def _action_guidance(action: DecisionAction) -> ActionGuidance:
+        if action == DecisionAction.REGENERATE:
+            return ActionGuidance(
+                summary=(
+                    "Regenerate the candidate once using the recorded failure reasons, "
+                    "then submit the replacement for a fresh evaluation."
+                ),
+                retryable=True,
+                max_regeneration_attempts=1,
+                if_retry_exhausted=DecisionAction.ESCALATE,
+            )
+        if action == DecisionAction.ESCALATE:
+            return ActionGuidance(
+                summary="Hold the candidate and route this evaluation to human review.",
+                human_review_required=True,
+            )
+        if action == DecisionAction.BLOCK:
+            return ActionGuidance(
+                summary="Do not release the response or execute the proposed action."
+            )
+        if action == DecisionAction.EDIT_REDACT:
+            return ActionGuidance(
+                summary="Release only the sanitized output returned by ControlPlane."
+            )
+        return ActionGuidance(
+            summary="Release the candidate without additional verification."
+        )

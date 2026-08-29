@@ -73,7 +73,9 @@ def test_authoritative_source_beats_stale_source(evaluator):
     )
     assert result.evidence_state == EvidenceState.CONTRADICTED
     retrieval = next(
-        item for item in result.check_results if item.detector_id == "retrieval_detector"
+        item
+        for item in result.check_results
+        if item.detector_id == "retrieval_detector"
     )
     selected = [
         reference
@@ -86,10 +88,34 @@ def test_authoritative_source_beats_stale_source(evaluator):
 
 
 def test_resolved_evidence_stops_before_model_judge(evaluator):
-    result = asyncio.run(evaluator.evaluate(load_scenario("support/supported-faq.json")))
+    result = asyncio.run(
+        evaluator.evaluate(load_scenario("support/supported-faq.json"))
+    )
     assert "judge_detector" in result.checks_skipped
     assert result.model_calls == 0
     assert result.stop_reason == StopReason.RESOLVED
+
+
+def test_result_exposes_budget_and_bounded_regeneration_contract(evaluator):
+    result = asyncio.run(
+        evaluator.evaluate(load_scenario("support/contradicted-refund-answer.json"))
+    )
+
+    assert result.latency_budget_ms == 12000
+    assert result.action_guidance.retryable is True
+    assert result.action_guidance.max_regeneration_attempts == 1
+    assert result.action_guidance.if_retry_exhausted == DecisionAction.ESCALATE
+    assert result.action_guidance.human_review_required is False
+
+
+def test_escalation_contract_requires_human_review(evaluator):
+    result = asyncio.run(
+        evaluator.evaluate(load_scenario("engineering/reversible-migration.json"))
+    )
+
+    assert result.decision == DecisionAction.ESCALATE
+    assert result.action_guidance.retryable is False
+    assert result.action_guidance.human_review_required is True
 
 
 def test_pii_is_redacted(evaluator):

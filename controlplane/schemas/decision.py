@@ -45,6 +45,16 @@ class RiskProfile(BaseModel):
     historical_sample_size: int = 0
 
 
+class ActionGuidance(BaseModel):
+    """Machine-readable handoff contract for the host application."""
+
+    summary: str
+    retryable: bool = False
+    max_regeneration_attempts: int = 0
+    if_retry_exhausted: DecisionAction | None = None
+    human_review_required: bool = False
+
+
 class EvaluationResult(BaseModel):
     evaluation_id: str
     event_id: str
@@ -61,6 +71,7 @@ class EvaluationResult(BaseModel):
     policy_id: str
     policy_version: str
     policy_checksum: str
+    latency_budget_ms: int
     latency_ms: float
     estimated_cost_units: float
     model_calls: int
@@ -68,3 +79,4 @@ class EvaluationResult(BaseModel):
     source_versions: dict[str, str] = Field(default_factory=dict)
     source_checksums: dict[str, str] = Field(default_factory=dict)
     sanitized_output: str | None = None
+    action_guidance: ActionGuidance
