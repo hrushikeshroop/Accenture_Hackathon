@@ -37,15 +37,32 @@ st.set_page_config(
 )
 st.markdown(
     """
+    <!--
+    THESIS: A production decision instrument, not a generic SaaS dashboard.
+    OWN-WORLD: Achromatic control surfaces, compact source-code data type, muted status hues, and restrained geometry.
+    STORY: Inspect the candidate, follow the checks, understand the risk-latency tradeoff, then act on the governed decision.
+    FIRST VIEWPORT: Scenario controls lead on the left; the released or held decision dominates the right without decorative chrome.
+    FORM: Targeted evolution of the existing Stage 2 console. Navigation, page structure, and workflows remain unchanged.
+    -->
     <style>
       :root {
-        --cp-indigo: #6558e8;
-        --cp-cyan: #0891b2;
-        --cp-green: #059669;
-        --cp-amber: #d97706;
-        --cp-red: #dc2626;
-        --cp-border: rgba(128, 128, 128, .19);
-        --cp-muted: rgba(128, 128, 128, .08);
+        color-scheme: dark;
+        --cp-bg: #0c0c0d;
+        --cp-surface-1: #161719;
+        --cp-surface-2: #1d1f22;
+        --cp-text-primary: #ededec;
+        --cp-text-secondary: #a4a5a8;
+        --cp-text-tertiary: #85878b;
+        --cp-border: rgba(255, 255, 255, .09);
+        --cp-border-strong: rgba(255, 255, 255, .16);
+        --cp-action: #ededec;
+        --cp-action-ink: #0c0c0d;
+        --cp-cyan: #7c97ad;
+        --cp-green: #8fae86;
+        --cp-amber: #c7973f;
+        --cp-red: #c9755e;
+        --cp-font-ui: "Source Sans 3", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --cp-font-data: "Source Code Pro", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
         --cp-type-micro: .625rem;
         --cp-type-label: .7rem;
         --cp-type-meta: .75rem;
@@ -53,6 +70,17 @@ st.markdown(
         --cp-type-body: .9375rem;
         --cp-type-title: 1.0625rem;
       }
+      html, body, [data-testid="stAppViewContainer"] {
+        font-family: var(--cp-font-ui);
+        font-feature-settings: "tnum" 1, "ss01" 1;
+      }
+      [data-testid="stAppViewContainer"] {
+        background: var(--cp-bg);
+        color: var(--cp-text-primary);
+      }
+      ::selection {background: rgba(237, 237, 236, .22); color: var(--cp-text-primary);}
+      * {scrollbar-color: var(--cp-border-strong) var(--cp-bg);}
+      :focus-visible {outline-color: var(--cp-text-primary) !important; outline-offset: 2px;}
       #MainMenu, footer {visibility: hidden;}
       header[data-testid="stHeader"] {background: transparent;}
       .block-container {
@@ -69,7 +97,7 @@ st.markdown(
         align-items: center;
         border: 1px solid var(--cp-border);
         border-radius: .9rem;
-        background: rgba(128,128,128,.025);
+        background: var(--cp-surface-1);
         padding: .42rem .55rem;
         margin-bottom: .7rem;
       }
@@ -91,8 +119,8 @@ st.markdown(
         width: 2.1rem;
         height: 2.1rem;
         border-radius: .62rem;
-        background: #6558e8;
-        color: white;
+        background: var(--cp-action);
+        color: var(--cp-action-ink);
         font-size: .7rem;
         font-weight: 820;
         line-height: 1;
@@ -112,13 +140,15 @@ st.markdown(
         white-space: nowrap;
       }
       [data-testid="stMetric"] {
-        background: rgba(99, 88, 232, .045);
-        border: 1px solid rgba(99, 88, 232, .14);
-        border-radius: .75rem;
+        background: var(--cp-surface-1);
+        border: 1px solid var(--cp-border);
+        border-radius: .5rem;
         padding: .75rem .9rem;
       }
       [data-testid="stMetricLabel"] p {font-size: var(--cp-type-meta);}
       [data-testid="stMetricValue"] {
+        font-family: var(--cp-font-data);
+        font-variant-numeric: tabular-nums;
         font-size: 1.35rem;
         line-height: 1.15;
       }
@@ -126,23 +156,46 @@ st.markdown(
       [data-testid="stMain"] h4 {font-size: 1rem; line-height: 1.3;}
       .stButton > button[kind="primary"] {
         min-height: 3.05rem;
-        border: 0;
-        border-radius: .75rem;
-        background: linear-gradient(100deg, #574bd6, #6558e8 55%, #397bc6);
-        box-shadow: 0 8px 22px rgba(87, 75, 214, .2);
+        border: 1px solid var(--cp-action);
+        border-radius: .45rem;
+        background: var(--cp-action);
+        color: var(--cp-action-ink);
+        box-shadow: none;
+        font-family: var(--cp-font-data);
         font-weight: 720;
         letter-spacing: .01em;
       }
       .stButton > button[kind="primary"]:hover {
-        box-shadow: 0 10px 28px rgba(87, 75, 214, .28);
-        transform: translateY(-1px);
+        border-color: var(--cp-action);
+        background: #d7d7d4;
+        color: var(--cp-action-ink);
+        box-shadow: none;
+      }
+      .stButton > button[kind="primary"]:active {
+        transform: translateY(1px);
+      }
+      .stButton > button[kind="primary"] p {color: var(--cp-action-ink);}
+      [data-testid="stFormSubmitButton"] button {
+        border: 1px solid var(--cp-action);
+        border-radius: .45rem;
+        background: var(--cp-action);
+        color: var(--cp-action-ink);
+        font-family: var(--cp-font-data);
+        font-weight: 650;
+      }
+      [data-testid="stFormSubmitButton"] button p {color: var(--cp-action-ink);}
+      [data-baseweb="select"] > div,
+      [data-baseweb="input"] > div,
+      [data-baseweb="textarea"] > div {
+        border-radius: .45rem;
+        background: var(--cp-surface-1);
       }
       .cp-hero {
         position: relative;
         overflow: hidden;
         border: 1px solid var(--cp-border);
-        background: rgba(128,128,128,.025);
-        border-radius: 1.1rem;
+        background: var(--cp-surface-1);
+        border-radius: .55rem;
         padding: .9rem 1.1rem;
         margin-bottom: 1.1rem;
       }
@@ -163,21 +216,18 @@ st.markdown(
         flex: 0 0 auto;
         display: inline-flex;
         align-items: center;
-        gap: .42rem;
-        border: 1px solid rgba(5,150,105,.25);
-        background: rgba(5,150,105,.08);
-        border-radius: 999px;
+        border: 1px solid var(--cp-border-strong);
+        background: transparent;
+        border-radius: .3rem;
         padding: .38rem .62rem;
+        color: var(--cp-text-secondary);
+        font-family: var(--cp-font-data);
         font-size: .7rem;
         font-weight: 760;
         letter-spacing: .05em;
       }
       .cp-system-dot {
-        width: .45rem;
-        height: .45rem;
-        border-radius: 50%;
-        background: var(--cp-green);
-        box-shadow: 0 0 0 4px rgba(5,150,105,.1);
+        display: none;
       }
       .cp-section-heading {
         display: flex;
@@ -190,23 +240,27 @@ st.markdown(
         place-items: center;
         width: 1.75rem;
         height: 1.75rem;
-        border-radius: .55rem;
-        color: white;
-        background: #6558e8;
+        border: 1px solid var(--cp-border-strong);
+        border-radius: .3rem;
+        color: var(--cp-text-secondary);
+        background: var(--cp-surface-2);
+        font-family: var(--cp-font-data);
         font-size: .72rem;
         font-weight: 800;
       }
       .cp-section-title {font-size: var(--cp-type-title); font-weight: 760; letter-spacing: -.01em;}
-      .cp-section-subtitle {font-size: var(--cp-type-meta); opacity: .68; margin-top: .08rem;}
+      .cp-section-subtitle {font-size: var(--cp-type-meta); color: var(--cp-text-secondary); margin-top: .08rem;}
       .cp-card {
         border: 1px solid var(--cp-border);
-        border-radius: .85rem;
+        border-radius: .5rem;
+        background: var(--cp-surface-1);
         padding: .9rem 1rem;
         margin: .4rem 0 .8rem 0;
       }
       .cp-label {
+        color: var(--cp-text-tertiary);
+        font-family: var(--cp-font-data);
         font-size: var(--cp-type-label);
-        opacity: .63;
         text-transform: uppercase;
         letter-spacing: .085em;
         font-weight: 720;
@@ -231,13 +285,13 @@ st.markdown(
       .cp-message {
         min-width: 0;
         border: 1px solid var(--cp-border);
-        border-radius: .9rem;
+        border-radius: .5rem;
         padding: 1rem 1.05rem;
-        background: rgba(128,128,128,.025);
+        background: var(--cp-surface-1);
       }
       .cp-message-output {
-        border-color: rgba(8,145,178,.27);
-        background: linear-gradient(130deg, rgba(8,145,178,.075), rgba(99,88,232,.025));
+        border-color: rgba(124,151,173,.36);
+        background: var(--cp-surface-2);
       }
       .cp-message-head {
         display: flex;
@@ -246,16 +300,18 @@ st.markdown(
         gap: .75rem;
         margin-bottom: .62rem;
       }
-      .cp-message-role {font-size: var(--cp-type-meta); font-weight: 760; letter-spacing: .03em;}
+      .cp-message-role {font-family: var(--cp-font-data); font-size: var(--cp-type-meta); font-weight: 650; letter-spacing: .03em;}
       .cp-message-chip {
-        border-radius: 999px;
-        padding: .16rem .43rem;
-        background: rgba(128,128,128,.1);
+        color: var(--cp-text-tertiary);
+        font-family: var(--cp-font-data);
+        padding: .1rem .2rem;
+        background: transparent;
         font-size: var(--cp-type-micro);
-        font-weight: 800;
+        font-weight: 650;
         letter-spacing: .07em;
-        opacity: .7;
       }
+      .cp-message-chip::before {content: "[ ";}
+      .cp-message-chip::after {content: " ]";}
       .cp-message-body {
         font-size: var(--cp-type-body);
         font-weight: 560;
@@ -266,9 +322,8 @@ st.markdown(
       .cp-message-arrow {
         align-self: center;
         text-align: center;
-        color: #6558e8;
+        color: var(--cp-text-tertiary);
         font-size: 1.35rem;
-        opacity: .72;
       }
       .cp-context-line {
         display: flex;
@@ -280,17 +335,19 @@ st.markdown(
       .cp-context-chip {
         padding: .22rem .52rem;
         border: 1px solid var(--cp-border);
-        border-radius: 999px;
+        border-radius: .3rem;
+        background: var(--cp-surface-1);
+        color: var(--cp-text-secondary);
+        font-family: var(--cp-font-data);
         font-size: var(--cp-type-label);
-        opacity: .72;
       }
       .cp-result-empty {
         display: grid;
         align-content: center;
         min-height: 12rem;
-        border: 1px dashed rgba(99,88,232,.28);
-        border-radius: .9rem;
-        background: rgba(99,88,232,.025);
+        border: 1px dashed var(--cp-border-strong);
+        border-radius: .5rem;
+        background: var(--cp-surface-1);
         padding: 1.1rem;
         margin: .35rem 0 .8rem 0;
       }
@@ -311,11 +368,13 @@ st.markdown(
       .cp-summary-item {
         min-width: 0;
         border: 1px solid var(--cp-border);
-        background: rgba(99,88,232,.035);
-        border-radius: .7rem;
+        background: var(--cp-surface-1);
+        border-radius: .45rem;
         padding: .62rem .72rem;
       }
       .cp-summary-value {
+        font-family: var(--cp-font-data);
+        font-variant-numeric: tabular-nums;
         font-size: .88rem;
         font-weight: 650;
         line-height: 1.3;
@@ -323,27 +382,20 @@ st.markdown(
         overflow-wrap: anywhere;
       }
       .cp-pill {
-        display: inline-block; border-radius: 999px; padding: .2rem .65rem;
-        margin: .12rem .18rem .12rem 0; font-size: .78rem; font-weight: 650;
-        background: rgba(99,88,232,.1); border: 1px solid rgba(99,88,232,.18);
+        display: inline-block;
+        margin: .12rem .35rem .12rem 0;
+        color: var(--cp-text-secondary);
+        font-family: var(--cp-font-data);
+        font-size: .74rem;
+        font-weight: 600;
       }
+      .cp-pill::before {content: "[ "; color: var(--cp-text-tertiary);}
+      .cp-pill::after {content: " ]"; color: var(--cp-text-tertiary);}
       .cp-decision {
         position: relative;
-        overflow: hidden;
-        border-radius: 1rem;
-        padding: 1.05rem 1.15rem;
+        border-radius: .5rem;
+        padding: 1.15rem 1.2rem;
         margin: .55rem 0 .95rem 0;
-      }
-      .cp-decision::after {
-        content: "";
-        position: absolute;
-        width: 9rem;
-        height: 9rem;
-        right: -3rem;
-        top: -4.8rem;
-        border-radius: 50%;
-        background: currentColor;
-        opacity: .04;
       }
       .cp-decision-head {
         display: flex;
@@ -355,47 +407,46 @@ st.markdown(
       .cp-decision-state {
         display: inline-flex;
         align-items: center;
-        gap: .36rem;
-        border: 1px solid currentColor;
-        border-radius: 999px;
-        padding: .2rem .5rem;
+        padding: .15rem .2rem;
+        font-family: var(--cp-font-data);
         font-size: var(--cp-type-micro);
-        font-weight: 820;
+        font-weight: 650;
         letter-spacing: .07em;
-        opacity: .72;
       }
-      .cp-decision-dot {width: .4rem; height: .4rem; border-radius: 50%; background: currentColor;}
+      .cp-decision-state::before {content: "[ ";}
+      .cp-decision-state::after {content: " ]";}
+      .cp-decision-dot {display: none;}
       .cp-decision-main {
         display: grid;
-        grid-template-columns: minmax(220px, .82fr) minmax(0, 1.18fr);
-        gap: 1.2rem;
-        align-items: end;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
       }
       .cp-decision-word {
         margin-top: .12rem;
-        font-size: clamp(1.55rem, 2.4vw, 2.05rem);
+        font-family: var(--cp-font-data);
+        font-size: clamp(2rem, 3.1vw, 2.7rem);
         line-height: 1;
-        font-weight: 830;
-        letter-spacing: -.045em;
+        font-weight: 650;
+        letter-spacing: .045em;
       }
-      .cp-decision-copy {margin-top: .48rem; max-width: 520px; font-size: var(--cp-type-copy); line-height: 1.48; opacity: .82;}
+      .cp-decision-copy {margin-top: .55rem; max-width: 68ch; color: var(--cp-text-secondary); font-size: var(--cp-type-copy); line-height: 1.48;}
       .cp-decision-kpis {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: .4rem;
+        gap: .75rem;
       }
       .cp-decision-kpi {
         min-width: 0;
-        border: 1px solid rgba(128,128,128,.17);
-        background: rgba(255,255,255,.23);
-        border-radius: .66rem;
-        padding: .52rem .58rem;
+        border-top: 1px solid var(--cp-border);
+        color: var(--cp-text-primary);
+        padding: .58rem .1rem 0 .1rem;
       }
-      .cp-decision-kpi-value {font-size: .82rem; font-weight: 760; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-decision-kpi-value {font-family: var(--cp-font-data); font-size: .82rem; font-weight: 650; margin-top: .16rem; overflow-wrap: anywhere;}
       .cp-decision-reason {
         margin-top: .78rem;
         padding-top: .68rem;
-        border-top: 1px solid rgba(128,128,128,.16);
+        border-top: 1px solid var(--cp-border);
+        color: var(--cp-text-secondary);
         font-size: .82rem;
         line-height: 1.45;
       }
@@ -409,9 +460,9 @@ st.markdown(
       .cp-route-step {
         min-width: 0;
         border: 1px solid var(--cp-border);
-        border-radius: .78rem;
+        border-radius: .45rem;
         padding: .7rem .75rem;
-        background: rgba(128,128,128,.025);
+        background: var(--cp-surface-1);
       }
       .cp-route-top {display: flex; align-items: center; justify-content: space-between; gap: .4rem;}
       .cp-route-index {
@@ -419,30 +470,32 @@ st.markdown(
         place-items: center;
         width: 1.2rem;
         height: 1.2rem;
-        border-radius: .38rem;
-        background: rgba(99,88,232,.1);
-        color: #6558e8;
+        border: 1px solid var(--cp-border-strong);
+        border-radius: .2rem;
+        background: var(--cp-surface-2);
+        color: var(--cp-text-secondary);
+        font-family: var(--cp-font-data);
         font-size: var(--cp-type-micro);
         font-weight: 820;
       }
-      .cp-route-state {font-weight: 780; font-size: .86rem; margin-top: .28rem;}
-      .cp-route-detail {font-size: var(--cp-type-meta); opacity: .74; margin-top: .12rem;}
-      .cp-route-arrow {align-self: center; color: #6558e8; opacity: .42; font-size: 1.05rem;}
+      .cp-route-state {font-family: var(--cp-font-data); font-weight: 650; font-size: .86rem; margin-top: .28rem;}
+      .cp-route-detail {color: var(--cp-text-secondary); font-size: var(--cp-type-meta); margin-top: .12rem;}
+      .cp-route-arrow {align-self: center; color: var(--cp-text-tertiary); font-size: 1.05rem;}
       .cp-route-step[data-state="SKIPPED"], .cp-route-step[data-state="NO CALL"] {opacity: .52; background: transparent;}
-      .cp-route-step[data-state="CALLED"] {border-color: rgba(126,34,206,.32); background: rgba(126,34,206,.065);}
-      .cp-route-step[data-label="Decision"] {border-color: rgba(8,145,178,.32); background: rgba(8,145,178,.055);}
-      .cp-route-note {font-size: var(--cp-type-meta); opacity: .68; margin: -.2rem 0 .45rem 0;}
+      .cp-route-step[data-state="CALLED"] {border-color: rgba(124,151,173,.38); background: rgba(124,151,173,.08);}
+      .cp-route-step[data-label="Decision"] {border-color: var(--cp-border-strong); background: var(--cp-surface-2);}
+      .cp-route-note {color: var(--cp-text-secondary); font-size: var(--cp-type-meta); margin: -.2rem 0 .45rem 0;}
       .cp-tradeoff {
         display: grid;
         grid-template-columns: .92fr 1.08fr;
         gap: .85rem;
         border: 1px solid var(--cp-border);
-        background: rgba(128,128,128,.022);
-        border-radius: .85rem;
+        background: var(--cp-surface-1);
+        border-radius: .5rem;
         padding: .8rem .9rem;
         margin: .4rem 0 .95rem 0;
       }
-      .cp-tradeoff-copy {font-size: .78rem; line-height: 1.45; opacity: .74; margin-top: .23rem;}
+      .cp-tradeoff-copy {color: var(--cp-text-secondary); font-size: .78rem; line-height: 1.45; margin-top: .23rem;}
       .cp-check-head {display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-top: .2rem;}
       .cp-check-counts {display: flex; flex-wrap: wrap; gap: .65rem; justify-content: flex-end;}
       .cp-count-stat {font-size: var(--cp-type-label); opacity: .68; white-space: nowrap;}
@@ -451,9 +504,9 @@ st.markdown(
       .cp-check {
         min-width: 0;
         border: 1px solid var(--cp-border);
-        border-radius: .78rem;
+        border-radius: .45rem;
         padding: .68rem .72rem;
-        background: rgba(128,128,128,.018);
+        background: var(--cp-surface-2);
       }
       .cp-check-top {display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem;}
       .cp-check-title {font-size: .8rem; font-weight: 750; line-height: 1.3;}
@@ -461,26 +514,19 @@ st.markdown(
         display: inline-flex;
         flex: 0 0 auto;
         align-items: center;
-        gap: .22rem;
-        border-radius: .4rem;
-        padding: .16rem .3rem;
+        padding: .08rem .15rem;
+        background: transparent !important;
+        font-family: var(--cp-font-data);
         font-size: var(--cp-type-micro);
-        font-weight: 820;
+        font-weight: 650;
         letter-spacing: .045em;
       }
-      .cp-status-mark {
-        display: inline-grid;
-        place-items: center;
-        width: .82rem;
-        height: .82rem;
-        border-radius: 50%;
-        font-size: var(--cp-type-micro);
-        font-weight: 900;
-      }
-      .cp-check[data-status="PASS"] .cp-check-status {color: var(--cp-green); background: rgba(5,150,105,.09);}
-      .cp-check[data-status="FAIL"] .cp-check-status {color: var(--cp-red); background: rgba(220,38,38,.085);}
-      .cp-check[data-status="UNKNOWN"] .cp-check-status {color: var(--cp-amber); background: rgba(217,119,6,.09);}
-      .cp-check[data-status="NOT_APPLICABLE"] .cp-check-status {color: #64748b; background: rgba(100,116,139,.09);}
+      .cp-check-status::before {content: "[ ";}
+      .cp-check-status::after {content: " ]";}
+      .cp-check[data-status="PASS"] .cp-check-status {color: var(--cp-green);}
+      .cp-check[data-status="FAIL"] .cp-check-status {color: var(--cp-red);}
+      .cp-check[data-status="UNKNOWN"] .cp-check-status {color: var(--cp-amber);}
+      .cp-check[data-status="NOT_APPLICABLE"] .cp-check-status {color: var(--cp-text-tertiary);}
       .cp-check-metrics {
         display: grid;
         grid-template-columns: .72fr 1.28fr;
@@ -490,7 +536,7 @@ st.markdown(
         border-top: 1px solid rgba(128,128,128,.12);
       }
       .cp-check-metric-label {display: block; font-size: var(--cp-type-micro); text-transform: uppercase; letter-spacing: .055em; opacity: .58;}
-      .cp-check-metric-value {display: block; margin-top: .12rem; font-size: var(--cp-type-label); font-weight: 680; overflow-wrap: anywhere;}
+      .cp-check-metric-value {display: block; margin-top: .12rem; font-family: var(--cp-font-data); font-variant-numeric: tabular-nums; font-size: var(--cp-type-label); font-weight: 650; overflow-wrap: anywhere;}
       .cp-check-reason {
         border-top: 1px solid rgba(128,128,128,.12);
         font-size: .72rem;
@@ -501,9 +547,9 @@ st.markdown(
       }
       .cp-check-reason-label {font-size: var(--cp-type-micro); font-weight: 800; letter-spacing: .055em; opacity: .68; margin-right: .28rem;}
       .cp-review-panel {
-        border: 1px solid rgba(217,119,6,.3);
-        border-radius: .85rem;
-        background: rgba(217,119,6,.055);
+        border: 1px solid rgba(199,151,63,.36);
+        border-radius: .5rem;
+        background: rgba(199,151,63,.07);
         padding: .9rem 1rem;
         margin: .45rem 0 .85rem 0;
       }
@@ -518,16 +564,15 @@ st.markdown(
       .cp-review-title {font-size: 1rem; font-weight: 760; margin-top: .14rem;}
       .cp-review-state {
         flex: 0 0 auto;
-        border: 1px solid rgba(217,119,6,.34);
-        border-radius: .42rem;
-        padding: .2rem .42rem;
+        padding: .15rem .2rem;
         color: var(--cp-amber);
+        font-family: var(--cp-font-data);
         font-size: var(--cp-type-micro);
-        font-weight: 800;
+        font-weight: 650;
       }
+      .cp-review-state::before {content: "[ ";}
+      .cp-review-state::after {content: " ]";}
       .cp-review-state[data-status="REVIEWED"] {
-        border-color: rgba(5,150,105,.32);
-        background: rgba(5,150,105,.08);
         color: var(--cp-green);
       }
       .cp-review-kpis {
@@ -541,18 +586,24 @@ st.markdown(
         padding-top: .48rem;
         min-width: 0;
       }
-      .cp-review-kpi-value {font-size: var(--cp-type-meta); font-weight: 720; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-review-kpi-value {font-family: var(--cp-font-data); font-size: var(--cp-type-meta); font-weight: 650; margin-top: .12rem; overflow-wrap: anywhere;}
       .cp-review-reason {
         margin-top: .65rem;
         font-size: .82rem;
         line-height: 1.48;
       }
-      .cp-good {background: rgba(16,185,129,.11); border: 1px solid rgba(16,185,129,.32);}
-      .cp-edit {background: rgba(14,165,233,.11); border: 1px solid rgba(14,165,233,.32);}
-      .cp-warn {background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.34);}
-      .cp-bad {background: rgba(239,68,68,.11); border: 1px solid rgba(239,68,68,.34);}
-      div[data-testid="stDataFrame"] {border: 1px solid rgba(128,128,128,.16); border-radius: .6rem;}
-      div[data-testid="stExpander"] {border-color: var(--cp-border); border-radius: .72rem;}
+      .cp-good {color: var(--cp-green); background: rgba(143,174,134,.08); border: 1px solid rgba(143,174,134,.36);}
+      .cp-edit {color: var(--cp-cyan); background: rgba(124,151,173,.08); border: 1px solid rgba(124,151,173,.36);}
+      .cp-info {color: var(--cp-cyan); background: rgba(124,151,173,.08); border: 1px solid rgba(124,151,173,.36);}
+      .cp-warn {color: var(--cp-amber); background: rgba(199,151,63,.08); border: 1px solid rgba(199,151,63,.36);}
+      .cp-bad {color: var(--cp-red); background: rgba(201,117,94,.08); border: 1px solid rgba(201,117,94,.38);}
+      div[data-testid="stDataFrame"] {border: 1px solid var(--cp-border); border-radius: .45rem; font-family: var(--cp-font-data); font-variant-numeric: tabular-nums;}
+      div[data-testid="stExpander"] {border-color: var(--cp-border); border-radius: .45rem; background: var(--cp-surface-1);}
+      div[data-testid="stExpander"] summary p {font-family: var(--cp-font-data); font-size: var(--cp-type-meta); letter-spacing: .015em;}
+      [data-testid="stJson"] pre, [data-testid="stCodeBlock"] code, code, pre {
+        font-family: var(--cp-font-data) !important;
+        font-variant-numeric: tabular-nums;
+      }
       @media (max-width: 900px) {
         .cp-summary-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
         .cp-decision-main {grid-template-columns: 1fr;}
@@ -655,9 +706,23 @@ def decision_tone(decision: str) -> str:
         "ALLOW": "cp-good",
         "EDIT_REDACT": "cp-edit",
         "REGENERATE": "cp-warn",
-        "ESCALATE": "cp-warn",
+        "ESCALATE": "cp-info",
         "BLOCK": "cp-bad",
     }.get(decision, "cp-warn")
+
+
+def telemetry_color(label: str) -> str:
+    """Return a restrained semantic color for operational chart categories."""
+    normalized = label.upper()
+    if any(token in normalized for token in ("VETO", "BLOCK", "FAIL", "DENIED")):
+        return "#c9755e"
+    if any(token in normalized for token in ("HUMAN", "ESCALATE", "REVIEW")):
+        return "#7c97ad"
+    if any(token in normalized for token in ("REGENERATE", "UNKNOWN", "UNCERTAIN")):
+        return "#c7973f"
+    if any(token in normalized for token in ("ALLOW", "PASS", "COMPLETE")):
+        return "#8fae86"
+    return "#85878b"
 
 
 def checker_counts(checks: list[dict[str, Any]]) -> dict[str, int]:
@@ -755,7 +820,7 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
     counts = checker_counts(checks)
     st.markdown(
         '<div class="cp-check-head"><div><div class="cp-label">Checker verdicts</div>'
-        '<div class="cp-section-title">What passed—and what did not</div></div>'
+        '<div class="cp-section-title">Outcomes and findings</div></div>'
         '<div class="cp-check-counts">'
         f'<span class="cp-count-stat"><strong>{counts["PASS"]}</strong> passed</span>'
         f'<span class="cp-count-stat"><strong>{counts["FAIL"]}</strong> failed</span>'
@@ -769,13 +834,14 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
         return
 
     cards: list[str] = []
-    status_marks = {
-        "PASS": "✓",
-        "FAIL": "×",
-        "UNKNOWN": "?",
-        "NOT_APPLICABLE": "–",
-    }
-    for check in checks:
+    status_priority = {"FAIL": 0, "UNKNOWN": 1, "PASS": 2, "NOT_APPLICABLE": 3}
+    ordered_checks = sorted(
+        checks,
+        key=lambda check: status_priority.get(
+            str(check.get("status", "UNKNOWN")).upper(), 1
+        ),
+    )
+    for check in ordered_checks:
         status = str(check.get("status", "UNKNOWN")).upper()
         if status not in counts:
             status = "UNKNOWN"
@@ -794,7 +860,6 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
             '<div class="cp-check-top">'
             f'<div class="cp-check-title">{html.escape(name)}</div>'
             '<div class="cp-check-status">'
-            f'<span class="cp-status-mark">{status_marks[status]}</span>'
             f"{html.escape(status.replace('_', ' '))}</div></div>"
             '<div class="cp-check-metrics">'
             '<div><span class="cp-check-metric-label">Latency</span>'
@@ -1587,6 +1652,7 @@ elif page == "Metrics":
                 {
                     "Decision": decision.replace("_", " ").title(),
                     "Evaluations": count,
+                    "Color": telemetry_color(decision),
                 }
                 for decision, count in metrics["decisions"].items()
             ]
@@ -1594,6 +1660,7 @@ elif page == "Metrics":
                 decision_rows,
                 x="Decision",
                 y="Evaluations",
+                color="Color",
                 horizontal=True,
                 sort="-Evaluations",
                 height=max(220, 84 + (44 * len(decision_rows))),
@@ -1607,6 +1674,7 @@ elif page == "Metrics":
                 {
                     "Stopping reason": reason.replace("_", " ").title(),
                     "Evaluations": count,
+                    "Color": telemetry_color(reason),
                 }
                 for reason, count in metrics["stop_reasons"].items()
             ]
@@ -1614,6 +1682,7 @@ elif page == "Metrics":
                 stop_reason_rows,
                 x="Stopping reason",
                 y="Evaluations",
+                color="Color",
                 horizontal=True,
                 sort="-Evaluations",
                 height=max(220, 84 + (44 * len(stop_reason_rows))),

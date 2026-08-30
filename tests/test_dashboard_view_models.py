@@ -387,6 +387,7 @@ def test_dashboard_uses_intentional_page_widths_and_vertical_candidate_flow():
     assert 'x="Decision"' in metrics_source
     assert 'x="Stopping reason"' in metrics_source
     assert metrics_source.count('sort="-Evaluations"') == 2
+    assert metrics_source.count('color="Color"') == 2
 
 
 def test_dashboard_uses_a_consistent_compact_typography_scale():
@@ -402,8 +403,12 @@ def test_dashboard_uses_a_consistent_compact_typography_scale():
     ):
         assert token in source
     assert "clamp(1.5rem, 2vw, 1.9rem)" in source
-    assert "clamp(1.55rem, 2.4vw, 2.05rem)" in source
+    assert "clamp(2rem, 3.1vw, 2.7rem)" in source
     assert '[data-testid="stMetricValue"]' in source
+    assert '--cp-bg: #0c0c0d' in source
+    assert '--cp-font-data: "Source Code Pro"' in source
+    assert "linear-gradient" not in source
+    assert "cp-status-mark" not in source
 
 
 def test_dashboard_has_no_bare_conditional_expressions_for_streamlit_magic():
@@ -471,6 +476,42 @@ def test_dashboard_pages_render_safe_empty_states(monkeypatch):
             "Inspect the middleware decision for an AI output" in item.value
             for item in app.markdown
         ), page
+
+
+def test_metrics_page_renders_semantic_horizontal_charts(monkeypatch):
+    metrics = {
+        "total_evaluations": 9,
+        "average_latency_ms": 128.4,
+        "average_checks_executed": 2.7,
+        "total_model_calls": 2,
+        "decisions": {"ALLOW": 5, "BLOCK": 2, "ESCALATE": 2},
+        "stop_reasons": {
+            "ALL_CHECKS_PASSED": 5,
+            "CRITICAL_VETO": 2,
+            "HUMAN_REVIEW_REQUIRED": 2,
+        },
+        "by_use_case": {"support.informational": {"ALLOW": 5}},
+        "average_cost_units": 1.8,
+        "feedback_count": 1,
+        "feedback_labels": {"REVIEW_APPROVE": 1},
+    }
+
+    class FakeResponse:
+        @staticmethod
+        def raise_for_status() -> None:
+            return None
+
+        @staticmethod
+        def json() -> dict[str, Any]:
+            return metrics
+
+    monkeypatch.setattr(requests, "request", lambda *args, **kwargs: FakeResponse())
+    app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
+    app.run(timeout=15)
+    app.segmented_control[0].set_value("Metrics").run(timeout=15)
+
+    assert not app.exception
+    assert app.subheader[0].value == "Operational metrics"
 
 
 def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
@@ -613,6 +654,17 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     assert any(
         "Judge Detector" in markdown.value and "UNKNOWN" in markdown.value
         for markdown in app.markdown
+    )
+    checker_cards = next(
+        markdown.value
+        for markdown in app.markdown
+        if 'class="cp-check-grid"' in markdown.value
+    )
+    assert checker_cards.index("Engineering Action") < checker_cards.index(
+        "Judge Detector"
+    )
+    assert checker_cards.index("Judge Detector") < checker_cards.index(
+        "Historical Detector"
     )
     assert {expander.label for expander in app.expander} == {
         "More scenario details",
