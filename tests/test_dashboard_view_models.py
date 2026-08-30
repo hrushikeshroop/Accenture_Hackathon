@@ -376,6 +376,8 @@ def test_dashboard_uses_intentional_page_widths_and_vertical_candidate_flow():
     assert source.count('class="cp-conversation cp-conversation-stacked"') == 1
     assert ".cp-conversation-stacked" in source
     assert 'centered_workspace("human-review-workspace", 1380)' in source
+    assert "review_queue_panel, handoff_panel = human_review_page.columns(" in source
+    assert "[0.72, 1.28]" in source
     assert 'centered_workspace("audit-workspace", 1440)' in source
     assert 'centered_workspace("policies-workspace", 1320)' in source
     assert 'centered_workspace("metrics-workspace", 1320)' in source

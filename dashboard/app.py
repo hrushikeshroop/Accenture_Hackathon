@@ -1354,73 +1354,93 @@ elif page == "Human review":
     reviewed_count = sum(
         1 for record in escalations if record["evaluation_id"] in latest_reviews
     )
-    queue_metrics = human_review_page.columns(3)
-    queue_metrics[0].metric("Escalated cases", len(escalations))
-    queue_metrics[1].metric("Pending review", len(escalations) - reviewed_count)
-    queue_metrics[2].metric("Reviewed", reviewed_count)
+    review_queue_panel, handoff_panel = human_review_page.columns(
+        [0.72, 1.28], gap="large", vertical_alignment="top"
+    )
+    selected_record: dict[str, Any] | None = None
+    selected_evaluation: str | None = None
 
-    if not escalations:
-        human_review_page.info(
-            "No human-review cases are waiting. Run an ESCALATE scenario to create one."
-        )
-    else:
-        queue_view = human_review_page.selectbox(
-            "Queue view",
-            ["Pending", "Reviewed", "All"],
-            key="human-review-queue-view",
-        )
-        visible_escalations = [
-            record
-            for record in escalations
-            if queue_view == "All"
-            or (
-                queue_view == "Reviewed"
-                and record["evaluation_id"] in latest_reviews
+    with review_queue_panel:
+        st.markdown("#### Review queue")
+        st.caption("Filter escalations and open the case that needs a disposition.")
+        queue_metrics = st.columns(3)
+        queue_metrics[0].metric("Escalated cases", len(escalations))
+        queue_metrics[1].metric("Pending review", len(escalations) - reviewed_count)
+        queue_metrics[2].metric("Reviewed", reviewed_count)
+
+        if not escalations:
+            st.info(
+                "No human-review cases are waiting. Run an ESCALATE scenario to create one."
             )
-            or (
-                queue_view == "Pending"
-                and record["evaluation_id"] not in latest_reviews
-            )
-        ]
-        if not visible_escalations:
-            message = (
-                "No pending reviews. Every escalated case has a recorded disposition."
-                if queue_view == "Pending"
-                else f"No {queue_view.lower()} escalation cases are available."
-            )
-            if queue_view == "Pending":
-                human_review_page.success(message)
-            else:
-                human_review_page.info(message)
         else:
-            selected_evaluation = human_review_page.selectbox(
-                "Open escalation case",
-                [record["evaluation_id"] for record in visible_escalations],
-                format_func=lambda evaluation_id: next(
-                    (
-                        f"{'Reviewed' if evaluation_id in latest_reviews else 'Pending'} · "
-                        f"{record['result'].get('use_case', record['use_case'])} · "
-                        f"{evaluation_id[:8]}"
-                    )
-                    for record in visible_escalations
-                    if record["evaluation_id"] == evaluation_id
-                ),
+            queue_view = st.selectbox(
+                "Queue view",
+                ["Pending", "Reviewed", "All"],
+                key="human-review-queue-view",
             )
-            selected_record = next(
+            visible_escalations = [
                 record
-                for record in visible_escalations
-                if record["evaluation_id"] == selected_evaluation
-            )
-            with human_review_page:
-                render_human_review_handoff(
-                    selected_record["result"],
-                    event=selected_record["event"],
-                    created_at=selected_record.get("created_at"),
-                    latest_review=latest_reviews.get(selected_evaluation),
-                    key_scope="queue",
+                for record in escalations
+                if queue_view == "All"
+                or (
+                    queue_view == "Reviewed"
+                    and record["evaluation_id"] in latest_reviews
                 )
-                with st.expander("Raw redacted escalation record"):
-                    st.json(selected_record, expanded=False)
+                or (
+                    queue_view == "Pending"
+                    and record["evaluation_id"] not in latest_reviews
+                )
+            ]
+            if not visible_escalations:
+                message = (
+                    "No pending reviews. Every escalated case has a recorded disposition."
+                    if queue_view == "Pending"
+                    else f"No {queue_view.lower()} escalation cases are available."
+                )
+                if queue_view == "Pending":
+                    st.success(message)
+                else:
+                    st.info(message)
+            else:
+                selected_evaluation = st.selectbox(
+                    "Open escalation case",
+                    [record["evaluation_id"] for record in visible_escalations],
+                    format_func=lambda evaluation_id: next(
+                        (
+                            f"{'Reviewed' if evaluation_id in latest_reviews else 'Pending'} · "
+                            f"{record['result'].get('use_case', record['use_case'])} · "
+                            f"{evaluation_id[:8]}"
+                        )
+                        for record in visible_escalations
+                        if record["evaluation_id"] == evaluation_id
+                    ),
+                )
+                selected_record = next(
+                    record
+                    for record in visible_escalations
+                    if record["evaluation_id"] == selected_evaluation
+                )
+
+    with handoff_panel:
+        if selected_record is not None and selected_evaluation is not None:
+            render_human_review_handoff(
+                selected_record["result"],
+                event=selected_record["event"],
+                created_at=selected_record.get("created_at"),
+                latest_review=latest_reviews.get(selected_evaluation),
+                key_scope="queue",
+            )
+            with st.expander("Raw redacted escalation record"):
+                st.json(selected_record, expanded=False)
+        else:
+            st.markdown(
+                '<div class="cp-result-empty">'
+                '<div class="cp-result-empty-title">No review packet open</div>'
+                '<div class="cp-result-empty-copy">Select an available escalation from '
+                "the queue to inspect its held request, AI candidate, evidence, and policy."
+                "</div></div>",
+                unsafe_allow_html=True,
+            )
 
 elif page == "Audit trail":
     audit_page = centered_workspace("audit-workspace", 1440)
