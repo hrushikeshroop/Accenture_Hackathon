@@ -1,102 +1,124 @@
 # ControlPlane.ai
 
-Risk-adaptive verification middleware for enterprise AI responses and agent actions.
+**Risk-adaptive verification middleware for enterprise AI responses and agent actions.**
 
-ControlPlane.ai sits between an AI application and the user or tool affected by its
-output. It uses trusted workflow context to select the cheapest sufficient checks,
-then returns an auditable action: `ALLOW`, `EDIT_REDACT`, `REGENERATE`, `BLOCK`, or
-`ESCALATE`.
+ControlPlane sits between an AI application and the user or tool affected by its
+output. Before release, it evaluates the candidate against risk, policy, governed
+evidence, authorization, reversibility, and prior outcomes. It returns one auditable
+action: `ALLOW`, `EDIT_REDACT`, `REGENERATE`, `BLOCK`, or `ESCALATE`.
 
-This repository is Team Noir's working proof of concept for Accenture Innovation
+This repository is Team Noir's working proof of concept for the Accenture Innovation
 Challenge 2026, Problem Track 1.
 
-## Why this prototype
+## The problem we solve
 
-A single checking pipeline creates the wrong tradeoff:
+Enterprise AI use cases do not share one risk profile. Applying every available check
+to every output increases latency, cost, and alert fatigue. Applying only lightweight
+checks allows high-consequence failures to escape.
 
-- checking every output deeply adds avoidable latency, cost, and alert fatigue;
-- checking every output lightly lets high-consequence failures escape.
+ControlPlane demonstrates a different tradeoff:
 
-ControlPlane adapts verification depth to the use case, consequence, evidence,
-authorization, reversibility, and recent outcomes. Low-risk work can stop early;
-high-risk or irreversible work receives stronger checks and human review when needed.
+- classify the consequence and context of each candidate;
+- select checks from a versioned policy for that use case and risk tier;
+- run independent checks in parallel and stop when the decision is known;
+- call the Groq AI judge only when policy and unresolved evidence require it;
+- fail safely on critical vetoes, exhausted latency, or unavailable verification;
+- preserve the redacted decision trace for review, metrics, feedback, and replay.
 
-## Core flow
+The result is defense in depth without paying the deepest verification cost on every
+request.
 
-```text
-AI response or proposed action
-            |
-            v
-structured event + trusted application context
-            |
-            v
-risk profile -> policy route -> parallel checks
-            |
-            v
-evidence + authorization + reversibility
-            |
-            v
-ALLOW | EDIT_REDACT | REGENERATE | BLOCK | ESCALATE
-            |
-            v
-redacted audit + feedback + metrics + replay
+## How it works
+
+```mermaid
+flowchart LR
+    A[AI response or proposed action] --> B[Structured event plus trusted context]
+    B --> C[Risk profiler]
+    C --> D[Versioned policy route]
+    D --> E[Fast local checks]
+    E -->|Resolved or vetoed| H[Decision engine]
+    E -->|Evidence required| F[Governed retrieval and authorization]
+    F -->|Still unresolved and policy-selected| G[Groq AI judge]
+    F --> H
+    G --> H
+    H --> I[Allow, edit/redact, regenerate, block, or escalate]
+    I --> J[Redacted audit, human review, metrics, and feedback]
 ```
 
-The Streamlit console makes the tradeoff visible for every scenario: AI input and
-candidate output, final action, risk tier, measured latency, model calls, stop reason,
-checker outcomes, evidence trace, and raw JSON.
+### Adaptive verification path
 
-## Stage 2 coverage
+1. **Risk profiling** combines the use case, candidate type, trusted workflow context,
+   reversibility, authorization signals, and adverse-outcome history.
+2. **Policy routing** selects only the detectors required for the resulting
+   `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL` tier.
+3. **Tiered execution** runs checks in parallel within each tier. A critical policy
+   veto or sufficient resolution stops deeper work early.
+4. **Governed evidence** accepts only configured sources with approved status,
+   authority, version, and checksum metadata.
+5. **AI-as-judge fallback** sends Groq only a redacted candidate and accumulated
+   retrieval trace. The judge must classify that supplied evidence and cannot use its
+   own knowledge as ground truth or override authorization.
+6. **Decision and handoff** return machine-readable reasons, retry guidance, measured
+   latency, checker results, and a human-review requirement when applicable.
 
-| Stage 2 area | Implemented mechanism |
+## Decision contract
+
+| Action | Host application behavior |
 |---|---|
-| Detection | Engineering safety rules, PII/secret checks, claim extraction, governed retrieval, entitlement checks, history, and optional Groq AI-as-judge |
-| Decision logic | Four risk tiers, four evidence states, separate authorization, hard vetoes, and five proportional actions |
-| Architecture | Inline FastAPI middleware, tier-local parallel checks, early stopping, and policy latency budgets |
-| Governance | Versioned YAML policies, governed source authority/status, checksums, redacted SQLite audit, and drift-aware replay |
-| Feedback | Reviewer labels update adverse-outcome history without changing the original audit record |
-| Metrics | Decisions, risk, stop reasons, latency, checks, estimated cost units, model calls, and feedback summaries |
+| `ALLOW` | Required checks passed; release the candidate. |
+| `EDIT_REDACT` | Release only the sanitized output returned by ControlPlane. |
+| `REGENERATE` | Retry with the recorded failure reason and a bounded attempt count. |
+| `BLOCK` | Do not release or execute the candidate. |
+| `ESCALATE` | Hold the candidate and send its redacted review packet to a human. |
 
-The prototype covers two simulated enterprise workflows: an engineering agent and a
-customer-support assistant. It uses illustrative data; no proprietary enterprise data
-or production integration is required.
+ControlPlane evaluates one candidate at a time; it does not call the source AI again.
+The returned action guidance caps regeneration attempts and specifies what to do when
+the retry is exhausted, preventing an internal regeneration loop.
 
-## What the decisions mean
+## What the prototype demonstrates
 
-| Action | Meaning |
+| Stage 2 concern | Implemented mechanism |
 |---|---|
-| `ALLOW` | Required checks passed; the candidate may continue. |
-| `EDIT_REDACT` | Localized sensitive data was removed before release. |
-| `REGENERATE` | A LOW/MEDIUM response is contradicted, unsupported, or uncertain; return it for correction. |
-| `BLOCK` | A critical policy, authorization, secret, or reversibility rule prevents execution. |
-| `ESCALATE` | HIGH/CRITICAL uncertainty, missing approval, or an unresolved mandatory check requires a human. |
+| Different risk and latency needs | Four risk tiers, per-use-case YAML policies, parallel groups, early stopping, and fail modes |
+| Overlapping risks | PII, claims, evidence, entitlement, engineering safety, secrets, permissions, reversibility, and history contribute to one decision |
+| Missing ground truth | Governed retrieval distinguishes verified, contradicted, uncertain, no-evidence, and not-applicable states |
+| Proportional intervention | Five actions separate safe release, correction, hard prevention, and human review |
+| Configurable governance | Versioned policies and source metadata control checks, vetoes, authority, and acceptable source states |
+| Auditability | Redacted SQLite records retain policy/source versions, checksums, route, stop reason, latency, and result |
+| Human oversight | A dedicated queue shows held context and records reviewer dispositions without silently releasing the candidate |
+| Feedback and monitoring | Reviewer labels, adverse-outcome history, decision metrics, latency, check count, cost units, and model-call totals |
 
-`POST /evaluate` is a one-shot evaluation; ControlPlane does not call the source AI
-again, so it cannot create an internal regeneration loop. A host integration should
-cap regeneration at one or two attempts, include the failure reason in the retry,
-reject identical output, and escalate or return a safe fallback when the retry or
-latency budget is exhausted. The PoC also raises repeated adverse outcomes to higher
-risk through its historical signal.
+The simulated scope covers engineering development/production and customer-support
+informational/transactional workflows. It requires no proprietary enterprise data.
 
-## Demo cases
+## Demo console
 
-| Scenario | What it demonstrates | Expected action |
+The Streamlit console is designed for a short judge walkthrough:
+
+| Page | What to show |
+|---|---|
+| **Run scenario** | Original request, AI candidate, risk, selected route, observed latency, checker outcomes, decision reason, and raw JSON |
+| **Human review** | Held escalations, redacted reviewer context, evidence/authorization state, and recorded disposition |
+| **Audit trail** | Stored decisions with policy, evidence, checks, stop reason, and redacted input |
+| **Policies** | Per-use-case risk configuration, required checks, governed sources, and non-negotiable vetoes |
+| **Metrics** | Decisions, stopping reasons, latency, checks, cost units, model calls, and feedback summaries |
+| **Feedback** | Human labels captured for offline calibration and future risk signals |
+
+Useful scenarios for a demo:
+
+| Scenario | Point demonstrated | Expected action |
 |---|---|---|
-| Safe development edit | LOW risk, deterministic route, early stop | `ALLOW` |
-| Unbounded production delete | Critical failure is not averaged away | `BLOCK` |
-| PII plus false refund claim | Privacy editing cannot hide an evidence failure | `REGENERATE` |
-| Informational answer without evidence | Cheap LOW-risk correction without an LLM call | `REGENERATE` |
-| Judge-assisted refund correction | MEDIUM risk uses Groq but avoids unnecessary human review | `REGENERATE` |
-| High-risk financial guarantee | Unsupported financial commitment reaches human review | `ESCALATE` |
-| Unauthorized cancellation | Evidence cannot substitute for identity or approval | `BLOCK` |
-
-The three live judge fixtures deliberately produce different proportional outcomes:
-the MEDIUM informational case regenerates automatically, while HIGH and CRITICAL
-unsupported commitments escalate.
+| Safe development edit | Low-risk deterministic route stops early | `ALLOW` |
+| Unbounded production delete | Critical safety veto is never averaged away | `BLOCK` |
+| PII in a support answer | Sensitive content is removed without discarding the safe answer | `EDIT_REDACT` |
+| Informational answer without evidence | Low-risk unsupported content is corrected locally | `REGENERATE` |
+| Judge-assisted refund answer | Medium-risk uncertainty reaches Groq but not unnecessary human review | `REGENERATE` |
+| High-risk unsupported commitment | Unresolved high-consequence content is held for review | `ESCALATE` |
+| Unauthorized cancellation | Evidence cannot substitute for identity or permission | `BLOCK` |
 
 ## Run locally
 
-Requirements: Git and Python 3.11.
+Requirements: Python 3.11 and Git.
 
 ### Windows PowerShell
 
@@ -123,30 +145,33 @@ python scripts/run_demo.py --fresh-db
 ```
 
 Open the Streamlit URL printed in the terminal. API documentation is available at
-`http://127.0.0.1:8000/docs`. The launcher binds both services to localhost and stops
-them together. `--fresh-db` prevents earlier demo history from changing the walkthrough.
+`http://127.0.0.1:8000/docs`. The launcher starts and stops both services together;
+`--fresh-db` creates an isolated audit database for a reproducible walkthrough.
 
-## Optional live Groq judge
+## Enable the live Groq judge
 
-The Groq endpoint and free-tier model are fixed in code. Add only your own key to the
-ignored `.env` file:
+The PoC fixes the provider endpoint and free-tier model in code. Add only your own key
+to the ignored `.env` file:
 
 ```dotenv
-GROQ_API_KEY=your_new_key
+GROQ_API_KEY=your_key_here
 ```
 
-Then run:
+Then start the normal demo or run the three judge-focused cases directly:
 
 ```powershell
 python scripts\run_live_judge_demo.py
 ```
 
-The judge receives only the redacted candidate and accumulated retrieval trace. It
-cannot replace deterministic critical vetoes, grant authorization, or use its own
-knowledge as evidence. Never commit `.env`; revoke any key exposed in chat, source,
-screenshots, or recordings.
+The live path uses Groq's OpenAI-compatible chat-completions endpoint with
+`qwen/qwen3.8-27b`, a short timeout, JSON output, and a bounded completion size. If the
+provider is missing, unavailable, or returns an invalid response, the detector records
+the failure and the policy fails safely. Never commit `.env` or expose the key in a
+demo recording.
 
-## Verification
+## Verified results
+
+Run the complete local verification:
 
 ```powershell
 pytest -q
@@ -156,16 +181,16 @@ python scripts\run_policy_replay_demo.py
 python scripts\run_model_judge_demo.py
 ```
 
-Verified results on the included PoC fixtures:
+Current repository results:
 
-- 99 automated tests passed; 3 live Groq tests are opt-in and skipped by default.
-- 17 of 17 labelled scenarios matched their expected actions.
-- False-block rate: 0.0 on the included labelled fixtures.
-- Unsafe-escape rate: 0.0 on the included labelled fixtures.
-- Average checks executed: 4.53 per scenario.
-- Deterministic evaluation made zero external model calls.
+- **114 automated tests passed**; 3 opt-in live Groq tests are skipped by default.
+- **17/17 labelled scenarios** matched their expected actions.
+- **0.0 false-block rate** on the included labelled fixtures.
+- **0.0 unsafe-escape rate** on the included labelled fixtures.
+- **4.53 average checks** executed per deterministic scenario.
+- **0 external model calls** during the deterministic evaluation suite.
 
-To run the opt-in live integration tests in PowerShell:
+To run the opt-in live tests:
 
 ```powershell
 $env:CONTROLPLANE_RUN_LIVE_JUDGE="1"
@@ -173,32 +198,32 @@ pytest -m live -q
 Remove-Item Env:CONTROLPLANE_RUN_LIVE_JUDGE
 ```
 
-These figures describe only the included simulated fixtures; they are not claims of
-production accuracy, safety, throughput, or provider availability.
+These measurements describe only the included simulated fixtures. They are not claims
+of production accuracy, safety, throughput, or provider availability.
 
 ## Repository map
 
 ```text
-controlplane/  Middleware contracts, routing, checks, decisions, API, and audit
-dashboard/     Streamlit demonstration console
+controlplane/  FastAPI middleware, routing, detectors, decisions, and audit storage
+dashboard/     Streamlit decision console
 policies/      Versioned risk and verification policies
-knowledge/     Illustrative governed evidence sources
+knowledge/     Illustrative governed evidence and source registry
 scenarios/     Labelled engineering and support events
-evaluation/    Repeatable fixture evaluation and baseline
-scripts/       Launch, scenario, replay, judge, and release utilities
+evaluation/    Repeatable fixture evaluation and latest report
+scripts/       Demo, scenario, replay, judge, and release utilities
 tests/         Unit, regression, integration, UI, and opt-in live checks
 ```
 
-## Scope
+## PoC boundary
 
-- Platform integrations and enterprise data are simulated.
+- Enterprise integrations and data are simulated.
 - Retrieval is governed structured fact lookup, not semantic document search.
-- Rule-based command, claim, and PII detection is intentionally bounded.
-- SQLite and Streamlit are local PoC components, not production architecture.
+- Command, claim, secret, and PII detection are deliberately bounded for the demo.
+- SQLite and Streamlit are local PoC components, not the proposed production stack.
 - Authentication, multi-tenant isolation, load testing, regulatory certification,
-  comprehensive bias/prompt-injection coverage, and production monitoring are outside
-  this prototype.
+  broad bias evaluation, and production monitoring remain outside this prototype.
 
 ## Team
 
-Team Noir, IIT Kanpur - M. Enoch Emmanuel, Jayanth Matam, and Hrushikesh Roop Avvari.
+**Team Noir, IIT Kanpur** - M. Enoch Emmanuel, Jayanth Matam, and Hrushikesh Roop
+Avvari.
