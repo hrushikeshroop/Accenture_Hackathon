@@ -27,7 +27,6 @@ INCLUDED_FILES = {
     ".gitattributes",
     ".gitignore",
     "README.md",
-    "README.pdf",
     "requirements.txt",
 }
 EXCLUDED_DIRECTORY_NAMES = {
