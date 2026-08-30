@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 590" role="img" aria-labelledby="title description">
+  <title id="title">ControlPlane adaptive verification architecture</title>
+  <desc id="description">An AI candidate and trusted context are risk profiled, routed through policy-selected local, evidence, and optional Groq checks, then assigned a proportional action with audit and human review.</desc>
+  <defs>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#8490a5"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#7867df"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="590" rx="18" fill="#ffffff"/>
+  <g font-family="Inter, Segoe UI, Arial, sans-serif">
+    <text x="50" y="52" fill="#171b26" font-size="27" font-weight="700">Risk-adaptive decision path</text>
+    <text x="50" y="80" fill="#586174" font-size="15">Verification depth increases only when the current evidence cannot safely resolve the candidate.</text>
+
+    <rect x="50" y="125" width="210" height="145" rx="14" fill="#f8fafc" stroke="#d8dee9" stroke-width="1.5"/>
+    <text x="72" y="156" fill="#5f50c9" font-size="12" font-weight="700" letter-spacing="0.8">INPUT</text>
+    <text x="72" y="187" fill="#171b26" font-size="17" font-weight="700">AI candidate</text>
+    <text x="72" y="214" fill="#586174" font-size="14">Response or proposed action</text>
+    <text x="72" y="238" fill="#586174" font-size="14">plus trusted application context</text>
+
+    <path d="M260 197 H298" fill="none" stroke="#8490a5" stroke-width="2" marker-end="url(#arrow-gray)"/>
+
+    <rect x="300" y="125" width="210" height="145" rx="14" fill="#f8fafc" stroke="#d8dee9" stroke-width="1.5"/>
+    <text x="322" y="156" fill="#5f50c9" font-size="12" font-weight="700" letter-spacing="0.8">ROUTE</text>
+    <text x="322" y="187" fill="#171b26" font-size="17" font-weight="700">Risk + policy</text>
+    <text x="322" y="214" fill="#586174" font-size="14">LOW / MEDIUM / HIGH /</text>
+    <text x="322" y="238" fill="#586174" font-size="14">CRITICAL and use-case policy</text>
+
+    <path d="M510 197 H548" fill="none" stroke="#7867df" stroke-width="2.2" marker-end="url(#arrow-purple)"/>
+
+    <rect x="550" y="105" width="360" height="185" rx="14" fill="#f4f1ff" stroke="#7867df" stroke-width="1.5"/>
+    <text x="574" y="136" fill="#5f50c9" font-size="12" font-weight="700" letter-spacing="0.8">POLICY-SELECTED VERIFICATION</text>
+
+    <rect x="574" y="151" width="312" height="34" rx="8" fill="#ffffff" stroke="#d8dee9"/>
+    <text x="590" y="173" fill="#5f50c9" font-family="Cascadia Code, Consolas, monospace" font-size="12" font-weight="700">T1</text>
+    <text x="628" y="173" fill="#2b3242" font-size="13" font-weight="600">Fast local checks and hard vetoes</text>
+
+    <rect x="574" y="195" width="312" height="34" rx="8" fill="#ffffff" stroke="#d8dee9"/>
+    <text x="590" y="217" fill="#5f50c9" font-family="Cascadia Code, Consolas, monospace" font-size="12" font-weight="700">T2</text>
+    <text x="628" y="217" fill="#2b3242" font-size="13" font-weight="600">Governed evidence + authorization</text>
+
+    <rect x="574" y="239" width="312" height="34" rx="8" fill="#ffffff" stroke="#d8dee9"/>
+    <text x="590" y="261" fill="#5f50c9" font-family="Cascadia Code, Consolas, monospace" font-size="12" font-weight="700">T3</text>
+    <text x="628" y="261" fill="#2b3242" font-size="13" font-weight="600">Groq judge only when unresolved</text>
+
+    <path d="M910 197 H948" fill="none" stroke="#7867df" stroke-width="2.2" marker-end="url(#arrow-purple)"/>
+
+    <rect x="950" y="125" width="200" height="145" rx="14" fill="#f8fafc" stroke="#d8dee9" stroke-width="1.5"/>
+    <text x="972" y="156" fill="#5f50c9" font-size="12" font-weight="700" letter-spacing="0.8">DECIDE</text>
+    <text x="972" y="187" fill="#171b26" font-size="17" font-weight="700">Decision engine</text>
+    <text x="972" y="214" fill="#586174" font-size="14">Evidence, authorization,</text>
+    <text x="972" y="238" fill="#586174" font-size="14">risk, vetoes, and deadline</text>
+
+    <path d="M1050 270 V323" fill="none" stroke="#7867df" stroke-width="2.2" marker-end="url(#arrow-purple)"/>
+
+    <rect x="50" y="325" width="1100" height="96" rx="14" fill="#f8fafc" stroke="#d8dee9" stroke-width="1.5"/>
+    <text x="72" y="355" fill="#5f50c9" font-size="12" font-weight="700" letter-spacing="0.8">PROPORTIONAL ACTION</text>
+
+    <g font-family="Cascadia Code, Consolas, monospace" font-size="13" font-weight="700" text-anchor="middle" fill="#2b3242">
+      <rect x="72" y="370" width="174" height="34" rx="8" fill="#ffffff" stroke="#cfd6e2" stroke-width="1.2"/>
+      <text x="159" y="392">ALLOW</text>
+      <rect x="270" y="370" width="174" height="34" rx="8" fill="#ffffff" stroke="#cfd6e2" stroke-width="1.2"/>
+      <text x="357" y="392">EDIT_REDACT</text>
+      <rect x="468" y="370" width="174" height="34" rx="8" fill="#ffffff" stroke="#cfd6e2" stroke-width="1.2"/>
+      <text x="555" y="392">REGENERATE</text>
+      <rect x="666" y="370" width="174" height="34" rx="8" fill="#ffffff" stroke="#cfd6e2" stroke-width="1.2"/>
+      <text x="753" y="392">BLOCK</text>
+      <rect x="864" y="370" width="264" height="34" rx="8" fill="#ffffff" stroke="#cfd6e2" stroke-width="1.2"/>
+      <text x="996" y="392">ESCALATE</text>
+    </g>
+
+    <path d="M555 421 V463" fill="none" stroke="#8490a5" stroke-width="2" marker-end="url(#arrow-gray)"/>
+    <path d="M996 421 V446 H975 V463" fill="none" stroke="#7867df" stroke-width="2.2" marker-end="url(#arrow-purple)"/>
+
+    <rect x="50" y="465" width="700" height="82" rx="14" fill="#f8fafc" stroke="#d8dee9" stroke-width="1.5"/>
+    <text x="72" y="494" fill="#5f50c9" font-size="12" font-weight="700" letter-spacing="0.8">GOVERNANCE TRACE</text>
+    <text x="72" y="521" fill="#171b26" font-size="17" font-weight="700">Redacted audit · metrics · feedback · replay</text>
+
+    <rect x="800" y="465" width="350" height="82" rx="14" fill="#fff8eb" stroke="#d69a32" stroke-width="1.5"/>
+    <text x="822" y="494" fill="#a96e12" font-size="12" font-weight="700" letter-spacing="0.8">HUMAN REVIEW WHEN REQUIRED</text>
+    <text x="822" y="521" fill="#171b26" font-size="17" font-weight="700">Held context + reviewer disposition</text>
+
+    <text x="50" y="575" fill="#586174" font-size="13" font-weight="600">Parallel checks protect latency. Critical vetoes stop immediately. Groq cannot grant authorization or replace governed evidence.</text>
+  </g>
+</svg>

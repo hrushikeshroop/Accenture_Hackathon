@@ -30,20 +30,11 @@ request.
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[AI response or proposed action] --> B[Structured event plus trusted context]
-    B --> C[Risk profiler]
-    C --> D[Versioned policy route]
-    D --> E[Fast local checks]
-    E -->|Resolved or vetoed| H[Decision engine]
-    E -->|Evidence required| F[Governed retrieval and authorization]
-    F -->|Still unresolved and policy-selected| G[Groq AI judge]
-    F --> H
-    G --> H
-    H --> I[Allow, edit/redact, regenerate, block, or escalate]
-    I --> J[Redacted audit, human review, metrics, and feedback]
-```
+<p align="center">
+  <img src="assets/controlplane-architecture.svg"
+       alt="ControlPlane risk-adaptive verification architecture"
+       width="1100">
+</p>
 
 ### Adaptive verification path
 

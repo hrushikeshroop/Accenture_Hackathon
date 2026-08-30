@@ -12,6 +12,7 @@ DEFAULT_OUTPUT = PROJECT_ROOT.parent / "ControlPlane-ai-PoC-Submission.zip"
 ARCHIVE_ROOT = "controlplane-ai-poc"
 
 INCLUDED_DIRECTORIES = {
+    "assets",
     "controlplane",
     "dashboard",
     "evaluation",
