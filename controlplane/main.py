@@ -28,6 +28,9 @@ class FeedbackLabel(StrEnum):
     INCORRECT = "INCORRECT"
     FALSE_POSITIVE = "FALSE_POSITIVE"
     UNSAFE_ESCAPE = "UNSAFE_ESCAPE"
+    REVIEW_APPROVE = "REVIEW_APPROVE"
+    REVIEW_REGENERATE = "REVIEW_REGENERATE"
+    REVIEW_BLOCK = "REVIEW_BLOCK"
 
 
 class FeedbackRequest(BaseModel):
@@ -52,7 +55,9 @@ async def evaluate(event: ControlEvent) -> dict[str, Any]:
 
 
 @app.get("/evaluations")
-async def evaluations(limit: int = Query(default=100, ge=1, le=1000)) -> list[dict[str, Any]]:
+async def evaluations(
+    limit: int = Query(default=100, ge=1, le=1000),
+) -> list[dict[str, Any]]:
     return evaluator.audit.list(limit=limit)
 
 
@@ -86,6 +91,17 @@ async def feedback(request: FeedbackRequest) -> dict[str, str]:
         request.reason,
     )
     return {"status": "recorded"}
+
+
+@app.get("/feedback")
+async def feedback_records(
+    evaluation_id: str | None = None,
+    limit: int = Query(default=1000, ge=1, le=10000),
+) -> list[dict[str, Any]]:
+    records = evaluator.audit.list_feedback(limit=limit)
+    if evaluation_id is None:
+        return records
+    return [record for record in records if record["evaluation_id"] == evaluation_id]
 
 
 @app.get("/policies")

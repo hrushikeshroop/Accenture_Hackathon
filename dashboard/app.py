@@ -12,6 +12,7 @@ from dashboard.view_models import (
     candidate_preview,
     check_rows,
     evidence_rows,
+    human_review_packet,
     key_value_rows,
     policy_check_rows,
     policy_veto_rows,
@@ -526,6 +527,53 @@ st.markdown(
         opacity: .76;
       }
       .cp-check-reason-label {font-size: .54rem; font-weight: 800; letter-spacing: .06em; opacity: .62; margin-right: .28rem;}
+      .cp-review-panel {
+        border: 1px solid rgba(217,119,6,.3);
+        border-radius: .85rem;
+        background: rgba(217,119,6,.055);
+        padding: .9rem 1rem;
+        margin: .45rem 0 .85rem 0;
+      }
+      .cp-review-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .8rem;
+        padding-bottom: .65rem;
+        border-bottom: 1px solid rgba(128,128,128,.15);
+      }
+      .cp-review-title {font-size: 1rem; font-weight: 760; margin-top: .14rem;}
+      .cp-review-state {
+        flex: 0 0 auto;
+        border: 1px solid rgba(217,119,6,.34);
+        border-radius: .42rem;
+        padding: .2rem .42rem;
+        color: var(--cp-amber);
+        font-size: .62rem;
+        font-weight: 800;
+      }
+      .cp-review-state[data-status="REVIEWED"] {
+        border-color: rgba(5,150,105,.32);
+        background: rgba(5,150,105,.08);
+        color: var(--cp-green);
+      }
+      .cp-review-kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .45rem;
+        margin-top: .65rem;
+      }
+      .cp-review-kpi {
+        border-top: 1px solid rgba(128,128,128,.18);
+        padding-top: .48rem;
+        min-width: 0;
+      }
+      .cp-review-kpi-value {font-size: .74rem; font-weight: 720; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-review-reason {
+        margin-top: .65rem;
+        font-size: .78rem;
+        line-height: 1.48;
+      }
       .cp-good {background: rgba(16,185,129,.11); border: 1px solid rgba(16,185,129,.32);}
       .cp-edit {background: rgba(14,165,233,.11); border: 1px solid rgba(14,165,233,.32);}
       .cp-warn {background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.34);}
@@ -537,6 +585,7 @@ st.markdown(
         .cp-decision-main {grid-template-columns: 1fr;}
         .cp-decision-kpis {grid-template-columns: repeat(2, minmax(0, 1fr));}
         .cp-check-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
+        .cp-review-kpis {grid-template-columns: repeat(2, minmax(0, 1fr));}
         .cp-tradeoff {grid-template-columns: 1fr;}
         .cp-route {grid-template-columns: 1fr;}
         .cp-route-arrow {display: none;}
@@ -548,6 +597,7 @@ st.markdown(
         .cp-message-arrow {transform: rotate(90deg);}
         .cp-check-grid {grid-template-columns: 1fr;}
         .cp-summary-grid {grid-template-columns: 1fr;}
+        .cp-review-kpis {grid-template-columns: 1fr;}
       }
     </style>
     """,
@@ -835,50 +885,154 @@ def render_result_overview(result: dict[str, Any]) -> None:
         )
 
 
-def render_human_review_handoff(result: dict[str, Any]) -> None:
+def render_human_review_handoff(
+    result: dict[str, Any],
+    *,
+    event: dict[str, Any] | None = None,
+    created_at: str | None = None,
+    latest_review: dict[str, Any] | None = None,
+    key_scope: str = "inline",
+) -> None:
     guidance = result.get("action_guidance", {})
     if not guidance.get("human_review_required"):
         return
 
     evaluation_id = str(result.get("evaluation_id", ""))
-    with st.expander("Human review handoff"):
-        st.caption(
-            "The candidate remains on hold. This records a reviewer outcome in the "
-            "existing feedback and audit store; it does not silently release the candidate."
+    packet = human_review_packet(event or {}, result, created_at=created_at)
+    review_status = "REVIEWED" if latest_review else "PENDING REVIEW"
+    status_value = "REVIEWED" if latest_review else "PENDING"
+    primary_reason = (
+        packet["reasons"][0]
+        if packet["reasons"]
+        else "The middleware requires a human decision before continuing."
+    )
+    st.markdown("#### Human review handoff")
+    st.markdown(
+        '<div class="cp-review-panel">'
+        '<div class="cp-review-head"><div>'
+        '<div class="cp-label">Escalation case</div>'
+        f'<div class="cp-review-title">{html.escape(str(packet["title"]))}</div></div>'
+        f'<div class="cp-review-state" data-status="{status_value}">{review_status}</div></div>'
+        '<div class="cp-review-kpis">'
+        '<div class="cp-review-kpi"><div class="cp-label">Risk</div>'
+        f'<div class="cp-review-kpi-value">{html.escape(str(packet["risk"]))}</div></div>'
+        '<div class="cp-review-kpi"><div class="cp-label">Evidence</div>'
+        f'<div class="cp-review-kpi-value">{html.escape(str(packet["evidence_state"]))}</div></div>'
+        '<div class="cp-review-kpi"><div class="cp-label">Authorization</div>'
+        f'<div class="cp-review-kpi-value">{html.escape(str(packet["authorization_state"]))}</div></div>'
+        '<div class="cp-review-kpi"><div class="cp-label">Policy</div>'
+        f'<div class="cp-review-kpi-value">{html.escape(str(packet["policy"]))}</div></div>'
+        "</div>"
+        '<div class="cp-review-reason"><strong>Why it was escalated:</strong> '
+        f"{html.escape(primary_reason)}</div></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="cp-conversation">'
+        '<div class="cp-message"><div class="cp-message-head">'
+        '<span class="cp-message-role">Original request</span>'
+        '<span class="cp-message-chip">HELD CASE</span></div>'
+        f'<div class="cp-message-body">{html.escape(str(packet["request"]))}</div></div>'
+        '<div class="cp-message-arrow">→</div>'
+        '<div class="cp-message cp-message-output"><div class="cp-message-head">'
+        f'<span class="cp-message-role">{html.escape(str(packet["candidate_label"]))}</span>'
+        '<span class="cp-message-chip">NOT RELEASED</span></div>'
+        f'<div class="cp-message-body">{html.escape(str(packet["candidate"]))}</div></div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    if len(packet["reasons"]) > 1:
+        st.markdown("**Additional middleware reasons**")
+        for reason in packet["reasons"][1:]:
+            st.markdown(f"- {reason}")
+    if packet["findings"]:
+        st.markdown("**Checks requiring reviewer attention**")
+        st.dataframe(packet["findings"], use_container_width=True, hide_index=True)
+    judge = packet["judge"]
+    if judge is not None:
+        st.info(
+            f"Groq judge: {judge['status']} / {judge['evidence_state']} / "
+            f"{judge['latency_ms']:.1f} ms. {judge['reason']}"
         )
-        with st.form(f"human-review-{evaluation_id}"):
-            reviewer_id = st.text_input(
-                "Reviewer ID", "demo-reviewer", key=f"reviewer-{evaluation_id}"
+    if latest_review:
+        disposition = str(latest_review.get("label", "REVIEWED")).replace("_", " ")
+        st.success(
+            f"Latest reviewer disposition: {disposition.title()} by "
+            f"{latest_review.get('reviewer_id', 'reviewer')} at "
+            f"{latest_review.get('created_at', 'the recorded time')}."
+        )
+    with st.expander("Reviewer context and evidence"):
+        st.caption(
+            "This packet comes from the redacted event and decision stored by the "
+            "middleware audit trail."
+        )
+        if packet["trusted_context"]:
+            st.markdown("**Trusted application context**")
+            st.dataframe(
+                key_value_rows(packet["trusted_context"]),
+                use_container_width=True,
+                hide_index=True,
             )
-            outcome = st.selectbox(
-                "Review outcome",
-                ["Confirm escalation", "Override decision", "False positive"],
-                key=f"outcome-{evaluation_id}",
+        if packet["evidence"]:
+            st.markdown("**Evidence reviewed by ControlPlane**")
+            st.dataframe(packet["evidence"], use_container_width=True, hide_index=True)
+        st.markdown(
+            compact_grid(
+                [
+                    ("Evaluation", packet["evaluation_id"]),
+                    ("Event", packet["event_id"]),
+                    ("Created", packet["created_at"]),
+                    (
+                        "Route cost",
+                        f"{packet['latency_ms']:.1f} ms / {packet['model_calls']} model calls",
+                    ),
+                ]
+            ),
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("**Record reviewer disposition**")
+    st.caption(
+        "The candidate remains held until the host application enforces this disposition."
+    )
+    outcomes = {
+        "Approve candidate": "REVIEW_APPROVE",
+        "Return for regeneration": "REVIEW_REGENERATE",
+        "Keep blocked": "REVIEW_BLOCK",
+    }
+    form_key = f"human-review-{key_scope}-{evaluation_id}"
+    with st.form(form_key):
+        reviewer_id = st.text_input(
+            "Reviewer ID",
+            "demo-reviewer",
+            key=f"reviewer-{key_scope}-{evaluation_id}",
+        )
+        outcome = st.selectbox(
+            "Disposition",
+            list(outcomes),
+            key=f"outcome-{key_scope}-{evaluation_id}",
+        )
+        note = st.text_area(
+            "Reviewer note", key=f"review-note-{key_scope}-{evaluation_id}"
+        )
+        submitted = st.form_submit_button(
+            "Record reviewer decision", use_container_width=True
+        )
+    if submitted:
+        if not reviewer_id.strip() or not note.strip():
+            st.error("Reviewer ID and a short reviewer note are required.")
+        else:
+            api_json(
+                "POST",
+                "/feedback",
+                json={
+                    "evaluation_id": evaluation_id,
+                    "reviewer_id": reviewer_id,
+                    "label": outcomes[outcome],
+                    "reason": note,
+                },
             )
-            note = st.text_area("Reviewer note", key=f"review-note-{evaluation_id}")
-            submitted = st.form_submit_button(
-                "Record review outcome", use_container_width=True
-            )
-        if submitted:
-            if not reviewer_id.strip() or not note.strip():
-                st.error("Reviewer ID and a short reviewer note are required.")
-            else:
-                label = {
-                    "Confirm escalation": "CORRECT",
-                    "Override decision": "INCORRECT",
-                    "False positive": "FALSE_POSITIVE",
-                }[outcome]
-                api_json(
-                    "POST",
-                    "/feedback",
-                    json={
-                        "evaluation_id": evaluation_id,
-                        "reviewer_id": reviewer_id,
-                        "label": label,
-                        "reason": note,
-                    },
-                )
-                st.success("Reviewer outcome recorded in the audit trail.")
+            st.success("Reviewer disposition recorded in the audit trail.")
 
 
 def render_verification_trace(result: dict[str, Any]) -> None:
@@ -934,6 +1088,10 @@ def render_result_footer(result: dict[str, Any]) -> None:
 def render_result(
     result: dict[str, Any],
     *,
+    event: dict[str, Any] | None = None,
+    created_at: str | None = None,
+    latest_review: dict[str, Any] | None = None,
+    review_key_scope: str = "inline",
     include_raw: bool = True,
     progressive: bool = False,
 ) -> None:
@@ -943,7 +1101,13 @@ def render_result(
     if progressive:
         render_result_overview(result)
         render_checker_summary(result.get("check_results", []))
-        render_human_review_handoff(result)
+        render_human_review_handoff(
+            result,
+            event=event,
+            created_at=created_at,
+            latest_review=latest_review,
+            key_scope=review_key_scope,
+        )
         with st.expander("More decision details"):
             render_verification_trace(result)
             render_result_footer(result)
@@ -960,10 +1124,11 @@ def render_result(
 
 navigation_labels = {
     "Run scenario": "01   Run scenario",
-    "Audit trail": "02   Audit trail",
-    "Policies": "03   Policies",
-    "Metrics": "04   Metrics",
-    "Feedback": "05   Feedback",
+    "Human review": "02   Human review",
+    "Audit trail": "03   Audit trail",
+    "Policies": "04   Policies",
+    "Metrics": "05   Metrics",
+    "Feedback": "06   Feedback",
 }
 
 with st.sidebar:
@@ -1150,10 +1315,19 @@ if page == "Run scenario":
     if st.button(
         "Run middleware verification", type="primary", use_container_width=True
     ):
+        evaluation_payload = {
+            **payload,
+            "metadata": {
+                **payload.get("metadata", {}),
+                "request_text": scenario_input,
+                "scenario_title": meta["title"],
+            },
+        }
         with st.spinner("Routing through the minimum policy checks required..."):
-            result = api_json("POST", "/evaluate", json=payload, timeout=20)
+            result = api_json("POST", "/evaluate", json=evaluation_payload, timeout=20)
         st.session_state["last_result"] = result
         st.session_state["last_scenario"] = str(selected)
+        st.session_state["last_event"] = evaluation_payload
 
     if st.session_state.get("last_scenario") == str(selected):
         st.markdown(
@@ -1164,7 +1338,70 @@ if page == "Run scenario":
             "</div></div>",
             unsafe_allow_html=True,
         )
-        render_result(st.session_state["last_result"], progressive=True)
+        render_result(
+            st.session_state["last_result"],
+            event=st.session_state.get("last_event", payload),
+            progressive=True,
+        )
+
+elif page == "Human review":
+    st.subheader("Human review queue")
+    st.caption(
+        "Escalated candidates remain held here with the redacted context a reviewer "
+        "needs to record a disposition."
+    )
+    records = api_json("GET", "/evaluations")
+    escalations = [
+        record
+        for record in records
+        if record.get("result", {}).get("decision") == "ESCALATE"
+    ]
+    feedback = api_json("GET", "/feedback")
+    latest_reviews: dict[str, dict[str, Any]] = {}
+    for review in feedback:
+        if str(review.get("label", "")).startswith("REVIEW_"):
+            latest_reviews.setdefault(str(review.get("evaluation_id", "")), review)
+
+    reviewed_count = sum(
+        1 for record in escalations if record["evaluation_id"] in latest_reviews
+    )
+    queue_metrics = st.columns(3)
+    queue_metrics[0].metric("Escalated cases", len(escalations))
+    queue_metrics[1].metric("Pending review", len(escalations) - reviewed_count)
+    queue_metrics[2].metric("Reviewed", reviewed_count)
+
+    if not escalations:
+        st.info(
+            "No human-review cases are waiting. Run an ESCALATE scenario to create one."
+        )
+    else:
+        selected_evaluation = st.selectbox(
+            "Open escalation case",
+            [record["evaluation_id"] for record in escalations],
+            format_func=lambda evaluation_id: next(
+                (
+                    f"{'Reviewed' if evaluation_id in latest_reviews else 'Pending'} · "
+                    f"{record['result'].get('use_case', record['use_case'])} · "
+                    f"{evaluation_id[:8]}"
+                )
+                for record in escalations
+                if record["evaluation_id"] == evaluation_id
+            ),
+        )
+        selected_record = next(
+            record
+            for record in escalations
+            if record["evaluation_id"] == selected_evaluation
+        )
+        render_human_review_handoff(
+            selected_record["result"],
+            event=selected_record["event"],
+            created_at=selected_record.get("created_at"),
+            latest_review=latest_reviews.get(selected_evaluation),
+            key_scope="queue",
+        )
+        with st.expander("Raw redacted escalation record"):
+            st.json(selected_record, expanded=False)
 
 elif page == "Audit trail":
     st.subheader("Audit trail")

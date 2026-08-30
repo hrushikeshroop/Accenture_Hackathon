@@ -51,7 +51,9 @@ class AuditRepository:
             )
             columns = {
                 row["name"]
-                for row in connection.execute("PRAGMA table_info(evaluations)").fetchall()
+                for row in connection.execute(
+                    "PRAGMA table_info(evaluations)"
+                ).fetchall()
             }
             if "is_replay" not in columns:
                 connection.execute(
@@ -130,10 +132,13 @@ class AuditRepository:
                 SELECT COUNT(*) AS total,
                        SUM(
                            CASE
-                               WHEN latest_feedback.label = 'FALSE_POSITIVE' THEN 0
-                               WHEN latest_feedback.label IN (
-                                   'UNSAFE_ESCAPE', 'INCORRECT'
-                               ) THEN 1
+                                WHEN latest_feedback.label IN (
+                                    'FALSE_POSITIVE', 'REVIEW_APPROVE'
+                                ) THEN 0
+                                WHEN latest_feedback.label IN (
+                                    'UNSAFE_ESCAPE', 'INCORRECT',
+                                    'REVIEW_REGENERATE', 'REVIEW_BLOCK'
+                                ) THEN 1
                                WHEN evaluations.decision IN (
                                    'BLOCK', 'REGENERATE', 'ESCALATE'
                                ) THEN 1

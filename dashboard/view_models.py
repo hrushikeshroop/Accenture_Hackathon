@@ -217,6 +217,83 @@ def evidence_rows(checks: list[dict[str, Any]]) -> list[dict[str, str]]:
     return rows
 
 
+def human_review_packet(
+    event: dict[str, Any],
+    result: dict[str, Any],
+    *,
+    created_at: str | None = None,
+) -> dict[str, Any]:
+    """Build the redacted case packet a reviewer needs to make a decision."""
+    metadata = event.get("metadata", {})
+    preview = candidate_preview(event)
+    checks = result.get("check_results", [])
+    findings = [
+        {
+            "Checker": str(check.get("detector_id", "checker"))
+            .replace("_", " ")
+            .title(),
+            "Verdict": display_value(check.get("status")),
+            "Evidence": display_value(check.get("evidence_state"))
+            .replace("_", " ")
+            .title(),
+            "Finding": display_value(check.get("reason")),
+        }
+        for check in checks
+        if str(check.get("status", "")).upper() in {"FAIL", "UNKNOWN"}
+    ]
+    judge = next(
+        (
+            {
+                "status": display_value(check.get("status")),
+                "reason": display_value(check.get("reason")),
+                "evidence_state": display_value(check.get("evidence_state"))
+                .replace("_", " ")
+                .title(),
+                "model_calls": int(check.get("model_calls", 0)),
+                "latency_ms": float(check.get("latency_ms", 0)),
+            }
+            for check in checks
+            if check.get("detector_id") == "judge_detector"
+        ),
+        None,
+    )
+    reasons = [str(reason) for reason in result.get("reasons", [])]
+    risk = result.get("risk_profile", {})
+    return {
+        "evaluation_id": display_value(result.get("evaluation_id")),
+        "event_id": display_value(result.get("event_id", event.get("event_id"))),
+        "created_at": created_at or "Current evaluation",
+        "title": str(
+            metadata.get("scenario_title")
+            or result.get("use_case", event.get("use_case", "Human review case"))
+        ),
+        "request": str(
+            metadata.get("request_text")
+            or "The host application did not include the original request."
+        ),
+        "candidate_label": preview["label"],
+        "candidate": preview["body"],
+        "risk": display_value(risk.get("tier")),
+        "evidence_state": display_value(result.get("evidence_state"))
+        .replace("_", " ")
+        .title(),
+        "authorization_state": display_value(result.get("authorization_state"))
+        .replace("_", " ")
+        .title(),
+        "reasons": reasons,
+        "findings": findings,
+        "judge": judge,
+        "policy": (
+            f"{display_value(result.get('policy_id'))} @ "
+            f"{display_value(result.get('policy_version'))}"
+        ),
+        "latency_ms": float(result.get("latency_ms", 0)),
+        "model_calls": int(result.get("model_calls", 0)),
+        "trusted_context": event.get("trusted_context", {}),
+        "evidence": evidence_rows(checks),
+    }
+
+
 def verification_route(result: dict[str, Any]) -> list[dict[str, Any]]:
     """Summarize the adaptive route without implying that skipped tiers ran."""
     checks = result.get("check_results", [])

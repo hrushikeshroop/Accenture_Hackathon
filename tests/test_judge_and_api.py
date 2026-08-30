@@ -47,9 +47,7 @@ def api_request(method: str, path: str, **kwargs: Any) -> httpx.Response:
     return asyncio.run(request())
 
 
-def test_mock_judge_path_is_explicit_and_safe(
-    tmp_path: Path, monkeypatch
-):
+def test_mock_judge_path_is_explicit_and_safe(tmp_path: Path, monkeypatch):
     evaluator = ControlPlaneEvaluator(
         Settings(
             db_path=tmp_path / "judge.db",
@@ -70,9 +68,7 @@ def test_mock_judge_path_is_explicit_and_safe(
     assert result.model_calls == 1
     assert "Simulated secondary-judge" in judge.reason
     assert judge.evidence_references
-    assert {item["source_id"] for item in judge.evidence_references} >= {
-        "refunds-v2"
-    }
+    assert {item["source_id"] for item in judge.evidence_references} >= {"refunds-v2"}
 
     def delayed_provider_call(self, event, evidence_references):
         time.sleep(2.5)
@@ -131,9 +127,7 @@ def test_openai_compatible_judge_request_contains_evidence_and_auth(monkeypatch)
         return FakeChatCompletionResponse()
 
     monkeypatch.setattr("controlplane.detectors.judge.requests.post", fake_post)
-    detector = JudgeDetector(
-        Settings(judge_api_key="test-only-key")
-    )
+    detector = JudgeDetector(Settings(judge_api_key="test-only-key"))
     event = load_scenario("support/judge-unavailable-escalation.json")
     references = [
         {
@@ -221,16 +215,12 @@ def test_string_false_authorization_is_rejected_at_api_boundary():
 
 
 def test_evaluate_feedback_and_metrics_api(tmp_path: Path, monkeypatch):
-    evaluator = ControlPlaneEvaluator(
-        Settings(db_path=tmp_path / "api.db")
-    )
+    evaluator = ControlPlaneEvaluator(Settings(db_path=tmp_path / "api.db"))
     monkeypatch.setattr(api_module, "evaluator", evaluator)
     monkeypatch.setattr(api_module, "metrics_service", MetricsService(evaluator.audit))
 
     event = load_scenario("support/supported-faq.json")
-    response = api_request(
-        "POST", "/evaluate", json=event.model_dump(mode="json")
-    )
+    response = api_request("POST", "/evaluate", json=event.model_dump(mode="json"))
     assert response.status_code == 200
     evaluation_id = response.json()["evaluation_id"]
 
@@ -240,12 +230,19 @@ def test_evaluate_feedback_and_metrics_api(tmp_path: Path, monkeypatch):
         json={
             "evaluation_id": evaluation_id,
             "reviewer_id": "reviewer-2",
-            "label": "CORRECT",
-            "reason": "The evidence and decision are correct.",
+            "label": "REVIEW_APPROVE",
+            "reason": "The held candidate is approved for release by the host.",
         },
     )
     assert feedback.status_code == 200
 
+    feedback_records = api_request(
+        "GET", f"/feedback?evaluation_id={evaluation_id}"
+    ).json()
+    assert len(feedback_records) == 1
+    assert feedback_records[0]["reviewer_id"] == "reviewer-2"
+    assert feedback_records[0]["label"] == "REVIEW_APPROVE"
+
     metrics = api_request("GET", "/metrics").json()
     assert metrics["total_evaluations"] == 1
-    assert metrics["feedback_labels"] == {"CORRECT": 1}
+    assert metrics["feedback_labels"] == {"REVIEW_APPROVE": 1}

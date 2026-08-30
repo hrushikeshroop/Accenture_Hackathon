@@ -11,12 +11,77 @@ from dashboard.view_models import (
     candidate_preview,
     check_rows,
     evidence_rows,
+    human_review_packet,
     scenario_meta,
     use_case_metric_rows,
     verification_route,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def escalation_result() -> dict[str, Any]:
+    return {
+        "evaluation_id": "evaluation-escalation-ui",
+        "event_id": "event-escalation-ui",
+        "use_case": "support.transactional",
+        "risk_profile": {
+            "tier": "HIGH",
+            "signals": ["unsupported_financial_promise"],
+            "reasons": ["The promise creates material customer risk."],
+            "historical_failure_rate": 0,
+            "historical_sample_size": 0,
+        },
+        "evidence_state": "NO_EVIDENCE",
+        "authorization_state": "AUTHORIZED",
+        "decision": "ESCALATE",
+        "stop_reason": "HUMAN_REVIEW_REQUIRED",
+        "reasons": ["A high-risk unsupported promise requires human review."],
+        "checks_selected": ["retrieval_detector", "judge_detector"],
+        "checks_skipped": [],
+        "check_results": [
+            {
+                "detector_id": "retrieval_detector",
+                "status": "UNKNOWN",
+                "severity": "HIGH",
+                "evidence_state": "NO_EVIDENCE",
+                "confidence": None,
+                "latency_ms": 2.5,
+                "model_calls": 0,
+                "reason": "No authoritative evidence supports the promise.",
+                "evidence_references": [],
+            },
+            {
+                "detector_id": "judge_detector",
+                "status": "UNKNOWN",
+                "severity": "HIGH",
+                "evidence_state": "UNCERTAIN",
+                "confidence": 0.4,
+                "latency_ms": 700,
+                "model_calls": 1,
+                "reason": "The settlement guarantee could not be verified.",
+                "evidence_references": [],
+            },
+        ],
+        "policy_id": "support-transactional",
+        "policy_version": "1.0",
+        "policy_checksum": "test-checksum",
+        "latency_budget_ms": 12000,
+        "latency_ms": 703.2,
+        "estimated_cost_units": 5,
+        "model_calls": 1,
+        "checks_executed": 2,
+        "source_versions": {},
+        "source_checksums": {},
+        "sanitized_output": None,
+        "action_guidance": {
+            "summary": "Hold the candidate and route this evaluation to human review.",
+            "retryable": False,
+            "max_regeneration_attempts": 0,
+            "if_retry_exhausted": None,
+            "human_review_required": True,
+        },
+    }
 
 
 def test_all_scenarios_have_demo_metadata():
@@ -140,6 +205,53 @@ def test_use_case_metrics_are_flattened_for_a_table():
             "REGENERATE": 1,
         }
     ]
+
+
+def test_human_review_packet_surfaces_request_candidate_and_failure_context():
+    event = {
+        "event_id": "support-event-1",
+        "use_case": "support.transactional",
+        "candidate": {"text": "The credit is guaranteed today."},
+        "trusted_context": {"identity_verified": True},
+        "metadata": {
+            "request_text": "When will the credit reach my bank?",
+            "scenario_title": "Unsupported settlement promise",
+        },
+    }
+    result = {
+        "evaluation_id": "evaluation-1",
+        "event_id": "support-event-1",
+        "use_case": "support.transactional",
+        "risk_profile": {"tier": "HIGH"},
+        "evidence_state": "NO_EVIDENCE",
+        "authorization_state": "AUTHORIZED",
+        "reasons": ["A high-risk unsupported promise requires human review."],
+        "policy_id": "support-transactional",
+        "policy_version": "1.0",
+        "latency_ms": 702.5,
+        "model_calls": 1,
+        "check_results": [
+            {
+                "detector_id": "judge_detector",
+                "status": "UNKNOWN",
+                "evidence_state": "UNCERTAIN",
+                "reason": "The promise could not be verified.",
+                "latency_ms": 700,
+                "model_calls": 1,
+                "evidence_references": [],
+            }
+        ],
+    }
+
+    packet = human_review_packet(event, result, created_at="2026-08-30 10:00:00")
+
+    assert packet["title"] == "Unsupported settlement promise"
+    assert packet["request"] == "When will the credit reach my bank?"
+    assert packet["candidate"] == "The credit is guaranteed today."
+    assert packet["risk"] == "HIGH"
+    assert packet["findings"][0]["Checker"] == "Judge Detector"
+    assert packet["judge"]["model_calls"] == 1
+    assert packet["trusted_context"] == {"identity_verified": True}
 
 
 def test_verification_route_distinguishes_local_evidence_and_live_judge():
@@ -343,4 +455,102 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "Raw scenario JSON",
         "More decision details",
         "Raw decision JSON",
+    }
+
+
+def test_escalated_decision_renders_the_reviewer_packet(monkeypatch):
+    result = escalation_result()
+
+    class FakeResponse:
+        @staticmethod
+        def raise_for_status() -> None:
+            return None
+
+        @staticmethod
+        def json() -> dict[str, Any]:
+            return result
+
+    monkeypatch.setattr(requests, "request", lambda *args, **kwargs: FakeResponse())
+    app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
+    app.run(timeout=15)
+    evaluate = next(
+        button for button in app.button if button.label == "Run middleware verification"
+    )
+    evaluate.click().run(timeout=15)
+
+    assert not app.exception
+    assert any("Human review handoff" in item.value for item in app.markdown)
+    assert any("Original request" in item.value for item in app.markdown)
+    assert any("AI proposed action" in item.value for item in app.markdown)
+    assert any(
+        "high-risk unsupported promise requires human review" in item.value
+        for item in app.markdown
+    )
+    assert any("Groq judge:" in item.value for item in app.info)
+    assert "Reviewer context and evidence" in {
+        expander.label for expander in app.expander
+    }
+    assert any(button.label == "Record reviewer decision" for button in app.button)
+
+
+def test_human_review_queue_loads_redacted_escalation_context(monkeypatch):
+    result = escalation_result()
+    event = {
+        "event_id": "event-escalation-ui",
+        "use_case": "support.transactional",
+        "candidate": {
+            "text": "A $5,000 credit is guaranteed to reach your bank today."
+        },
+        "trusted_context": {
+            "customer_id": "customer-95",
+            "identity_verified": True,
+        },
+        "metadata": {
+            "request_text": "When will the goodwill credit reach my bank?",
+            "scenario_title": "High-risk financial guarantee",
+        },
+    }
+    record = {
+        "evaluation_id": result["evaluation_id"],
+        "event_id": result["event_id"],
+        "use_case": result["use_case"],
+        "created_at": "2026-08-30 10:00:00",
+        "event": event,
+        "result": result,
+    }
+
+    class FakeResponse:
+        def __init__(self, payload: Any):
+            self.payload = payload
+
+        @staticmethod
+        def raise_for_status() -> None:
+            return None
+
+        def json(self) -> Any:
+            return self.payload
+
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if url.endswith("/evaluations"):
+            return FakeResponse([record])
+        if url.endswith("/feedback"):
+            return FakeResponse([])
+        raise AssertionError(f"Unexpected dashboard API request: {method} {url}")
+
+    monkeypatch.setattr(requests, "request", fake_request)
+    app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
+    app.run(timeout=15)
+    app.radio[0].set_value("Human review").run(timeout=15)
+
+    assert not app.exception
+    assert app.subheader[0].value == "Human review queue"
+    assert any("High-risk financial guarantee" in item.value for item in app.markdown)
+    assert any(
+        "When will the goodwill credit reach my bank?" in item.value
+        for item in app.markdown
+    )
+    assert any("A $5,000 credit is guaranteed" in item.value for item in app.markdown)
+    assert any(button.label == "Record reviewer decision" for button in app.button)
+    assert "Raw redacted escalation record" in {
+        expander.label for expander in app.expander
     }
