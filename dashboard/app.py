@@ -70,7 +70,13 @@ st.markdown(
       [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) [data-testid="column"] {
         min-width: 0;
       }
-      .cp-topbar-brand {display: flex; align-items: center; gap: .68rem; min-width: 0;}
+      .cp-topbar-brand {
+        display: flex;
+        align-items: center;
+        gap: .68rem;
+        min-width: 0;
+        min-height: 2.5rem;
+      }
       .cp-topbar-mark {
         display: grid;
         place-items: center;
@@ -84,149 +90,10 @@ st.markdown(
       }
       .cp-topbar-product {font-size: .9rem; font-weight: 780; line-height: 1.15;}
       .cp-topbar-mode {font-size: .65rem; opacity: .58; margin-top: .14rem;}
-      [data-testid="stMain"] [data-testid="stRadio"] > label {display: none;}
-      [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) [data-testid="stRadio"] {
-        margin-bottom: 0;
-      }
-      [data-testid="stMain"] div[role="radiogroup"] {
-        display: flex;
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: .12rem;
-        border-bottom: 0;
-        padding-bottom: 0;
-      }
-      [data-testid="stMain"] div[role="radiogroup"] label {
-        min-height: 2.25rem;
-        border: 1px solid transparent;
-        border-radius: .62rem;
-        padding: .34rem .58rem;
-        transition: background-color .15s ease, border-color .15s ease;
-      }
-      [data-testid="stMain"] div[role="radiogroup"] label:hover {
-        border-color: var(--cp-border);
-        background: rgba(128,128,128,.055);
-      }
-      [data-testid="stMain"] div[role="radiogroup"] label:has(input:checked) {
-        border-color: rgba(99,88,232,.25);
-        background: rgba(99,88,232,.105);
-        color: #6558e8;
-      }
-      [data-testid="stMain"] div[role="radiogroup"] label > div:first-child {display: none;}
-      [data-testid="stMain"] div[role="radiogroup"] label p {
-        font-size: .74rem;
-        font-weight: 690;
-      }
       [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) [data-testid="stPopover"] button {
-        min-height: 2.25rem;
+        min-height: 2.5rem;
         white-space: nowrap;
       }
-      [data-testid="stSidebar"] {
-        border-right: 1px solid var(--cp-border);
-      }
-      [data-testid="stSidebar"] > div:first-child {
-        background:
-          radial-gradient(circle at 20% 0%, rgba(99,88,232,.09), transparent 28%),
-          rgba(128,128,128,.018);
-      }
-      [data-testid="stSidebarUserContent"] {padding-top: 1.2rem;}
-      [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-        line-height: 1.45;
-      }
-      .cp-sidebar-brand {
-        display: flex;
-        align-items: center;
-        gap: .72rem;
-        margin: .05rem 0 .7rem 0;
-      }
-      .cp-sidebar-mark {
-        position: relative;
-        display: grid;
-        place-items: center;
-        width: 2.2rem;
-        height: 2.2rem;
-        border: 1px solid rgba(99,88,232,.34);
-        border-radius: .7rem;
-        background: rgba(99,88,232,.1);
-        color: #6558e8;
-        font-size: .74rem;
-        font-weight: 850;
-        letter-spacing: -.02em;
-      }
-      .cp-sidebar-mark::after {
-        content: "";
-        position: absolute;
-        width: .42rem;
-        height: .42rem;
-        right: -.08rem;
-        top: -.08rem;
-        border: 2px solid var(--secondary-background-color);
-        border-radius: 50%;
-        background: var(--cp-green);
-      }
-      .cp-sidebar-product {font-size: .92rem; font-weight: 790; line-height: 1.1;}
-      .cp-sidebar-mode {font-size: .67rem; opacity: .58; margin-top: .18rem; letter-spacing: .035em;}
-      .cp-sidebar-intro {
-        border: 1px solid var(--cp-border);
-        border-radius: .72rem;
-        padding: .62rem .68rem;
-        margin: .25rem 0 1.05rem 0;
-        font-size: .68rem;
-        line-height: 1.45;
-        opacity: .72;
-      }
-      .cp-sidebar-nav-label {margin: 0 0 .36rem .14rem;}
-      [data-testid="stSidebar"] [data-testid="stRadio"] > label {display: none;}
-      [data-testid="stSidebar"] div[role="radiogroup"] {gap: .3rem;}
-      [data-testid="stSidebar"] div[role="radiogroup"] label {
-        min-height: 2.65rem;
-        border: 1px solid transparent;
-        border-radius: .68rem;
-        padding: .48rem .62rem;
-        transition: background-color .15s ease, border-color .15s ease;
-      }
-      [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-        border-color: var(--cp-border);
-        background: rgba(128,128,128,.055);
-      }
-      [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        border-color: rgba(99,88,232,.25);
-        background: rgba(99,88,232,.105);
-        color: #6558e8;
-      }
-      [data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child {
-        display: none;
-      }
-      [data-testid="stSidebar"] div[role="radiogroup"] label p {
-        font-size: .77rem;
-        font-weight: 690;
-        letter-spacing: .005em;
-      }
-      .cp-sidebar-route {
-        border: 1px solid var(--cp-border);
-        border-radius: .78rem;
-        padding: .72rem;
-        margin-top: .55rem;
-        background: rgba(128,128,128,.025);
-      }
-      .cp-sidebar-route-nodes {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr auto 1fr;
-        align-items: center;
-        gap: .22rem;
-        margin-top: .5rem;
-      }
-      .cp-sidebar-node {
-        text-align: center;
-        border: 1px solid var(--cp-border);
-        border-radius: .46rem;
-        padding: .32rem .2rem;
-        font-size: .56rem;
-        font-weight: 780;
-        letter-spacing: .045em;
-      }
-      .cp-sidebar-chevron {font-size: .7rem; opacity: .38;}
-      .cp-sidebar-route-copy {font-size: .63rem; line-height: 1.4; opacity: .6; margin-top: .5rem;}
       [data-testid="stMetric"] {
         background: rgba(99, 88, 232, .045);
         border: 1px solid rgba(99, 88, 232, .14);
@@ -647,8 +514,6 @@ st.markdown(
       }
       @media (max-width: 650px) {
         .block-container {padding-left: .75rem; padding-right: .75rem;}
-        [data-testid="stMain"] div[role="radiogroup"] {flex-wrap: wrap;}
-        [data-testid="stMain"] div[role="radiogroup"] label {flex: 1 1 8rem;}
         .cp-hero-top {display: block;}
         .cp-system-state {margin-top: .75rem;}
         .cp-conversation {grid-template-columns: 1fr;}
@@ -695,6 +560,17 @@ def api_json(
     except (requests.RequestException, ValueError):
         st.error("The ControlPlane API returned an unreadable response.")
     st.stop()
+
+
+@st.cache_data(show_spinner=False)
+def load_scenario_payloads(
+    file_signatures: tuple[tuple[str, int], ...],
+) -> dict[str, dict[str, Any]]:
+    """Parse unchanged demo fixtures once instead of on every widget rerun."""
+    return {
+        path: json.loads(Path(path).read_text(encoding="utf-8"))
+        for path, _modified_at in file_signatures
+    }
 
 
 def pill(value: Any) -> str:
@@ -984,7 +860,7 @@ def render_human_review_handoff(
             st.markdown(f"- {reason}")
     if packet["findings"]:
         st.markdown("**Checks requiring reviewer attention**")
-        st.dataframe(packet["findings"], use_container_width=True, hide_index=True)
+        st.dataframe(packet["findings"], width="stretch", hide_index=True)
     judge = packet["judge"]
     if judge is not None:
         st.info(
@@ -1007,12 +883,12 @@ def render_human_review_handoff(
             st.markdown("**Trusted application context**")
             st.dataframe(
                 key_value_rows(packet["trusted_context"]),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         if packet["evidence"]:
             st.markdown("**Evidence reviewed by ControlPlane**")
-            st.dataframe(packet["evidence"], use_container_width=True, hide_index=True)
+            st.dataframe(packet["evidence"], width="stretch", hide_index=True)
         st.markdown(
             compact_grid(
                 [
@@ -1053,7 +929,7 @@ def render_human_review_handoff(
             "Reviewer note", key=f"review-note-{key_scope}-{evaluation_id}"
         )
         submitted = st.form_submit_button(
-            "Record reviewer decision", use_container_width=True
+            "Record reviewer decision", width="stretch"
         )
     if submitted:
         if not reviewer_id.strip() or not note.strip():
@@ -1108,13 +984,13 @@ def render_verification_trace(result: dict[str, Any]) -> None:
 
     st.markdown("**Checks performed**")
     if checks:
-        st.dataframe(check_rows(checks), use_container_width=True, hide_index=True)
+        st.dataframe(check_rows(checks), width="stretch", hide_index=True)
     else:
         st.caption("No detector result was recorded.")
 
     if references:
         st.markdown(f"**Evidence trace ({len(references)} observations)**")
-        st.dataframe(references, use_container_width=True, hide_index=True)
+        st.dataframe(references, width="stretch", hide_index=True)
 
 
 def render_result_footer(result: dict[str, Any]) -> None:
@@ -1128,10 +1004,6 @@ def render_result_footer(result: dict[str, Any]) -> None:
 def render_result(
     result: dict[str, Any],
     *,
-    event: dict[str, Any] | None = None,
-    created_at: str | None = None,
-    latest_review: dict[str, Any] | None = None,
-    review_key_scope: str = "inline",
     include_raw: bool = True,
     progressive: bool = False,
 ) -> None:
@@ -1141,13 +1013,6 @@ def render_result(
     if progressive:
         render_result_overview(result)
         render_checker_summary(result.get("check_results", []))
-        render_human_review_handoff(
-            result,
-            event=event,
-            created_at=created_at,
-            latest_review=latest_review,
-            key_scope=review_key_scope,
-        )
         with st.expander("More decision details"):
             render_verification_trace(result)
             render_result_footer(result)
@@ -1183,13 +1048,14 @@ with brand_column:
         unsafe_allow_html=True,
     )
 with navigation_column:
-    page = st.radio(
+    page = st.segmented_control(
         "Navigate",
         list(navigation_labels),
+        default="Run scenario",
         format_func=navigation_labels.get,
-        horizontal=True,
         label_visibility="collapsed",
-        key="top-navigation",
+        width="stretch",
+        key="top-navigation-control",
     )
 with connection_column:
     with st.popover("Connection", width="stretch"):
@@ -1230,9 +1096,11 @@ if page == "Run scenario":
         "Select a prepared case, review its AI candidate, then run ControlPlane verification."
     )
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
-    scenario_payloads = {
-        path: json.loads(path.read_text(encoding="utf-8")) for path in scenario_paths
-    }
+    scenario_signatures = tuple(
+        (str(path), path.stat().st_mtime_ns) for path in scenario_paths
+    )
+    cached_payloads = load_scenario_payloads(scenario_signatures)
+    scenario_payloads = {path: cached_payloads[str(path)] for path in scenario_paths}
     available_groups = {
         label: use_case
         for label, use_case in SCENARIO_GROUPS.items()
@@ -1338,7 +1206,7 @@ if page == "Run scenario":
         arguments = candidate.get("arguments", {})
         if arguments:
             st.dataframe(
-                key_value_rows(arguments), use_container_width=True, hide_index=True
+                key_value_rows(arguments), width="stretch", hide_index=True
             )
         claims = candidate.get("claims", [])
         if claims:
@@ -1352,17 +1220,17 @@ if page == "Run scenario":
                     }
                     for claim in claims
                 ],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         st.markdown("**Trusted application context**")
-        st.dataframe(key_value_rows(context), use_container_width=True, hide_index=True)
+        st.dataframe(key_value_rows(context), width="stretch", hide_index=True)
 
     with st.expander("Raw scenario JSON"):
         st.json(payload, expanded=False)
 
     if st.button(
-        "Run middleware verification", type="primary", use_container_width=True
+        "Run middleware verification", type="primary", width="stretch"
     ):
         evaluation_payload = {
             **payload,
@@ -1376,7 +1244,6 @@ if page == "Run scenario":
             result = api_json("POST", "/evaluate", json=evaluation_payload, timeout=20)
         st.session_state["last_result"] = result
         st.session_state["last_scenario"] = str(selected)
-        st.session_state["last_event"] = evaluation_payload
 
     if st.session_state.get("last_scenario") == str(selected):
         st.markdown(
@@ -1387,25 +1254,8 @@ if page == "Run scenario":
             "</div></div>",
             unsafe_allow_html=True,
         )
-        last_result = st.session_state["last_result"]
-        latest_inline_review = None
-        if last_result.get("decision") == "ESCALATE":
-            evaluation_id = str(last_result.get("evaluation_id", ""))
-            reviews = api_json(
-                "GET", "/feedback", params={"evaluation_id": evaluation_id}
-            )
-            latest_inline_review = next(
-                (
-                    review
-                    for review in reviews
-                    if str(review.get("label", "")).startswith("REVIEW_")
-                ),
-                None,
-            )
         render_result(
-            last_result,
-            event=st.session_state.get("last_event", payload),
-            latest_review=latest_inline_review,
+            st.session_state["last_result"],
             progressive=True,
         )
 
@@ -1518,7 +1368,7 @@ elif page == "Audit trail":
             }
             for row in records
         ]
-        st.dataframe(overview, use_container_width=True, hide_index=True)
+        st.dataframe(overview, width="stretch", hide_index=True)
         selected_id = st.selectbox(
             "Inspect evaluation",
             [row["evaluation_id"] for row in records],
@@ -1562,7 +1412,7 @@ elif page == "Policies":
             }
             for policy in policies
         ],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
     selected_policy_id = st.selectbox(
@@ -1578,7 +1428,7 @@ elif page == "Policies":
         st.markdown("#### Checks by risk tier")
         st.dataframe(
             policy_check_rows(policy.get("required_checks", {})),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     with right:
@@ -1598,13 +1448,13 @@ elif page == "Policies":
                 {"Signal": signal.replace("_", " ").title(), "Risk": risk}
                 for signal, risk in policy.get("signal_risks", {}).items()
             ],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     veto_rows = policy_veto_rows(policy.get("veto_rules", []))
     if veto_rows:
         st.markdown("#### Non-negotiable vetoes")
-        st.dataframe(veto_rows, use_container_width=True, hide_index=True)
+        st.dataframe(veto_rows, width="stretch", hide_index=True)
     with st.expander("Raw policy configuration"):
         st.json(policy, expanded=False)
 
@@ -1633,7 +1483,7 @@ elif page == "Metrics":
     st.markdown("#### Use-case breakdown")
     use_case_rows = use_case_metric_rows(metrics["by_use_case"])
     if use_case_rows:
-        st.dataframe(use_case_rows, use_container_width=True, hide_index=True)
+        st.dataframe(use_case_rows, width="stretch", hide_index=True)
     else:
         st.caption("No use-case data yet.")
     bottom = st.columns(3)
@@ -1647,7 +1497,7 @@ elif page == "Metrics":
                 {"Label": label, "Count": count}
                 for label, count in metrics["feedback_labels"].items()
             ],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -1676,7 +1526,7 @@ else:
         reason = st.text_area(
             "Reason", placeholder="Explain why this label is appropriate."
         )
-        if st.button("Record feedback", type="primary", use_container_width=True):
+        if st.button("Record feedback", type="primary", width="stretch"):
             if not reviewer_id.strip() or not reason.strip():
                 st.warning(
                     "Reviewer ID and a short reason are required in the demo console."

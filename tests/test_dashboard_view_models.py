@@ -346,8 +346,9 @@ def test_dashboard_uses_centered_top_navigation():
     assert "padding-top: 4.25rem" in source
     assert "latency_budget_ms" not in source
     assert "Trust is a decision, not a default" not in source
-    assert "horizontal=True" in source
-    assert list(app.radio[0].options) == [
+    assert "st.segmented_control(" in source
+    assert "st.radio(" not in source
+    assert list(app.segmented_control[0].options) == [
         "Run scenario",
         "Human review",
         "Audit trail",
@@ -413,7 +414,7 @@ def test_dashboard_pages_render_safe_empty_states(monkeypatch):
     for page, expected_copy in expected_empty_copy.items():
         app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
         app.run(timeout=15)
-        app.radio[0].set_value(page).run(timeout=15)
+        app.segmented_control[0].set_value(page).run(timeout=15)
 
         assert not app.exception, page
         messages = [item.value for item in [*app.info, *app.caption]]
@@ -569,7 +570,7 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     }
 
 
-def test_escalated_decision_renders_the_reviewer_packet(monkeypatch):
+def test_escalated_decision_defers_reviewer_packet_to_human_review_page(monkeypatch):
     result = escalation_result()
 
     class FakeResponse:
@@ -586,8 +587,6 @@ def test_escalated_decision_renders_the_reviewer_packet(monkeypatch):
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         if method == "POST" and url.endswith("/evaluate"):
             return FakeResponse(result)
-        if method == "GET" and url.endswith("/feedback"):
-            return FakeResponse([])
         raise AssertionError(f"Unexpected dashboard API request: {method} {url}")
 
     monkeypatch.setattr(requests, "request", fake_request)
@@ -599,18 +598,23 @@ def test_escalated_decision_renders_the_reviewer_packet(monkeypatch):
     evaluate.click().run(timeout=15)
 
     assert not app.exception
-    assert any("Human review handoff" in item.value for item in app.markdown)
-    assert any("Original request" in item.value for item in app.markdown)
-    assert any("AI proposed action" in item.value for item in app.markdown)
     assert any(
         "high-risk unsupported promise requires human review" in item.value
         for item in app.markdown
     )
-    assert any("Groq judge:" in item.value for item in app.info)
-    assert "Reviewer context and evidence" in {
+    assert any(
+        "Groq judge" in item.value and "1 live call" in item.value
+        for item in app.markdown
+    )
+    assert not any("Groq judge:" in item.value for item in app.info)
+    assert not any("Human review handoff" in item.value for item in app.markdown)
+    assert not any("Original request" in item.value for item in app.markdown)
+    assert "Reviewer context and evidence" not in {
         expander.label for expander in app.expander
     }
-    assert any(button.label == "Record reviewer decision" for button in app.button)
+    assert not any(
+        button.label == "Record reviewer decision" for button in app.button
+    )
 
 
 def test_human_review_queue_loads_redacted_escalation_context(monkeypatch):
@@ -660,7 +664,7 @@ def test_human_review_queue_loads_redacted_escalation_context(monkeypatch):
     monkeypatch.setattr(requests, "request", fake_request)
     app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
     app.run(timeout=15)
-    app.radio[0].set_value("Human review").run(timeout=15)
+    app.segmented_control[0].set_value("Human review").run(timeout=15)
 
     assert not app.exception
     assert app.subheader[0].value == "Human review queue"
@@ -721,7 +725,7 @@ def test_human_review_submission_refreshes_queue_state(monkeypatch):
     monkeypatch.setattr(requests, "request", fake_request)
     app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
     app.run(timeout=15)
-    app.radio[0].set_value("Human review").run(timeout=15)
+    app.segmented_control[0].set_value("Human review").run(timeout=15)
     next(area for area in app.text_area if area.label == "Reviewer note").set_value(
         "Evidence checked; keep the candidate blocked."
     )
