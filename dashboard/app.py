@@ -43,9 +43,67 @@ st.markdown(
       #MainMenu, footer {visibility: hidden;}
       header[data-testid="stHeader"] {background: transparent;}
       .block-container {
-        max-width: 1180px;
-        padding-top: 1.25rem;
+        max-width: 1120px;
+        padding-top: 1rem;
         padding-bottom: 3rem;
+      }
+      [data-testid="stSidebar"], [data-testid="collapsedControl"] {display: none;}
+      .cp-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.2rem;
+        border: 1px solid var(--cp-border);
+        border-radius: .9rem;
+        background: rgba(128,128,128,.025);
+        padding: .72rem .85rem;
+        margin-bottom: .55rem;
+      }
+      .cp-topbar-brand {display: flex; align-items: center; gap: .68rem; min-width: 0;}
+      .cp-topbar-mark {
+        display: grid;
+        place-items: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: .62rem;
+        background: #6558e8;
+        color: white;
+        font-size: .7rem;
+        font-weight: 820;
+      }
+      .cp-topbar-product {font-size: .9rem; font-weight: 780; line-height: 1.15;}
+      .cp-topbar-mode {font-size: .65rem; opacity: .58; margin-top: .14rem;}
+      .cp-topbar-route {text-align: right; font-size: .68rem; line-height: 1.4; opacity: .68;}
+      .cp-topbar-route strong {display: block; opacity: 1;}
+      [data-testid="stMain"] [data-testid="stRadio"] > label {display: none;}
+      [data-testid="stMain"] [data-testid="stRadio"] {margin-bottom: .45rem;}
+      [data-testid="stMain"] div[role="radiogroup"] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .32rem;
+        border-bottom: 1px solid var(--cp-border);
+        padding-bottom: .55rem;
+      }
+      [data-testid="stMain"] div[role="radiogroup"] label {
+        min-height: 2.45rem;
+        border: 1px solid transparent;
+        border-radius: .62rem;
+        padding: .42rem .68rem;
+        transition: background-color .15s ease, border-color .15s ease;
+      }
+      [data-testid="stMain"] div[role="radiogroup"] label:hover {
+        border-color: var(--cp-border);
+        background: rgba(128,128,128,.055);
+      }
+      [data-testid="stMain"] div[role="radiogroup"] label:has(input:checked) {
+        border-color: rgba(99,88,232,.25);
+        background: rgba(99,88,232,.105);
+        color: #6558e8;
+      }
+      [data-testid="stMain"] div[role="radiogroup"] label > div:first-child {display: none;}
+      [data-testid="stMain"] div[role="radiogroup"] label p {
+        font-size: .74rem;
+        font-weight: 690;
       }
       [data-testid="stSidebar"] {
         border-right: 1px solid var(--cp-border);
@@ -591,6 +649,9 @@ st.markdown(
         .cp-route-arrow {display: none;}
       }
       @media (max-width: 650px) {
+        .cp-topbar {display: block;}
+        .cp-topbar-route {text-align: left; margin-top: .65rem;}
+        [data-testid="stMain"] div[role="radiogroup"] label {flex: 1 1 8rem;}
         .cp-hero-top {display: block;}
         .cp-system-state {margin-top: .75rem;}
         .cp-conversation {grid-template-columns: 1fr;}
@@ -1123,55 +1184,46 @@ def render_result(
 
 
 navigation_labels = {
-    "Run scenario": "01   Run scenario",
-    "Human review": "02   Human review",
-    "Audit trail": "03   Audit trail",
-    "Policies": "04   Policies",
-    "Metrics": "05   Metrics",
-    "Feedback": "06   Feedback",
+    "Run scenario": "Run scenario",
+    "Human review": "Human review",
+    "Audit trail": "Audit trail",
+    "Policies": "Policies",
+    "Metrics": "Metrics",
+    "Feedback": "Feedback",
 }
 
-with st.sidebar:
-    st.markdown(
-        '<div class="cp-sidebar-brand">'
-        '<div class="cp-sidebar-mark">CP</div><div>'
-        '<div class="cp-sidebar-product">ControlPlane.ai</div>'
-        '<div class="cp-sidebar-mode">DECISION CONSOLE · POC</div>'
-        "</div></div>"
-        '<div class="cp-sidebar-intro">Inspect how each AI candidate is routed, '
-        "verified, decided, and preserved for audit.</div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="cp-sidebar-nav-label cp-label">Workspace</div>',
-        unsafe_allow_html=True,
-    )
-    page = st.radio(
-        "Navigate",
-        list(navigation_labels),
-        format_func=navigation_labels.get,
-        label_visibility="collapsed",
-    )
-    st.divider()
-    with st.expander("Connection settings"):
+st.markdown(
+    '<div class="cp-topbar">'
+    '<div class="cp-topbar-brand"><div class="cp-topbar-mark">CP</div><div>'
+    '<div class="cp-topbar-product">ControlPlane.ai</div>'
+    '<div class="cp-topbar-mode">Decision console · Stage 2 proof of concept</div>'
+    "</div></div>"
+    '<div class="cp-topbar-route"><strong>Adaptive verification</strong>'
+    "Local checks → governed evidence → Groq judge fallback</div></div>",
+    unsafe_allow_html=True,
+)
+page = st.radio(
+    "Navigate",
+    list(navigation_labels),
+    format_func=navigation_labels.get,
+    horizontal=True,
+    label_visibility="collapsed",
+    key="top-navigation",
+)
+with st.expander("Connection settings"):
+    connection_column, test_column = st.columns([4, 1])
+    with connection_column:
         API_URL = st.text_input(
-            "Middleware API", "http://localhost:8000", label_visibility="collapsed"
+            "Middleware API",
+            "http://localhost:8000",
+            label_visibility="collapsed",
         ).rstrip("/")
+    with test_column:
         if st.button("Test middleware connection", use_container_width=True):
             health = api_json("GET", "/health", timeout=3)
             st.success(
                 "API connected" if health.get("status") == "ok" else "API responded"
             )
-    st.markdown(
-        '<div class="cp-sidebar-route"><div class="cp-label">Adaptive route</div>'
-        '<div class="cp-sidebar-route-nodes">'
-        '<span class="cp-sidebar-node">LOCAL</span><span class="cp-sidebar-chevron">›</span>'
-        '<span class="cp-sidebar-node">EVIDENCE</span><span class="cp-sidebar-chevron">›</span>'
-        '<span class="cp-sidebar-node">JUDGE</span></div>'
-        '<div class="cp-sidebar-route-copy">Stops as soon as policy has enough signal. '
-        "The live judge is a fallback, not the default.</div></div>",
-        unsafe_allow_html=True,
-    )
 
 st.markdown(
     """

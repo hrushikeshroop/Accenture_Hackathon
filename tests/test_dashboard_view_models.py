@@ -312,6 +312,25 @@ def test_dashboard_default_page_loads_without_api_call():
     }
 
 
+def test_dashboard_uses_centered_top_navigation():
+    source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
+    app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
+    app.run(timeout=15)
+
+    assert not app.exception
+    assert "with st.sidebar:" not in source
+    assert 'class="cp-topbar"' in source
+    assert "horizontal=True" in source
+    assert list(app.radio[0].options) == [
+        "Run scenario",
+        "Human review",
+        "Audit trail",
+        "Policies",
+        "Metrics",
+        "Feedback",
+    ]
+
+
 def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
     result = {
         "evaluation_id": "evaluation-ui-test",
