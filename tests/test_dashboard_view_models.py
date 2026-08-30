@@ -404,11 +404,14 @@ def test_dashboard_uses_a_consistent_compact_typography_scale():
     ):
         assert token in source
     assert "clamp(1.5rem, 2vw, 1.9rem)" in source
-    assert "clamp(1.55rem, 2.4vw, 2.05rem)" in source
+    assert "clamp(2rem, 3.1vw, 2.7rem)" in source
     assert '[data-testid="stMetricValue"]' in source
     assert 'font-family: var(--cp-font-ui)' in source
     assert 'font-family: var(--cp-font-data) !important' in source
     assert 'font-variant-numeric: tabular-nums' in source
+    assert '.cp-message-role {font-size: var(--cp-type-meta); font-weight: 650;' in source
+    assert 'font-size: .74rem; font-weight: 600;' in source
+    assert 'letter-spacing: .045em;' in source
 
 
 def test_dashboard_has_no_bare_conditional_expressions_for_streamlit_magic():

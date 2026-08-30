@@ -167,6 +167,7 @@ st.markdown(
         font-weight: 720;
         letter-spacing: .01em;
       }
+      [data-testid="stFormSubmitButton"] button {font-weight: 650;}
       .stButton > button[kind="primary"]:hover {
         box-shadow: 0 10px 28px rgba(87, 75, 214, .28);
         transform: translateY(-1px);
@@ -202,6 +203,7 @@ st.markdown(
         background: rgba(5,150,105,.08);
         border-radius: 999px;
         padding: .38rem .62rem;
+        font-family: var(--cp-font-data);
         font-size: .7rem;
         font-weight: 760;
         letter-spacing: .05em;
@@ -280,13 +282,13 @@ st.markdown(
         gap: .75rem;
         margin-bottom: .62rem;
       }
-      .cp-message-role {font-size: var(--cp-type-meta); font-weight: 760; letter-spacing: .03em;}
+      .cp-message-role {font-size: var(--cp-type-meta); font-weight: 650; letter-spacing: .03em;}
       .cp-message-chip {
         border-radius: 999px;
         padding: .16rem .43rem;
         background: rgba(128,128,128,.1);
         font-size: var(--cp-type-micro);
-        font-weight: 800;
+        font-weight: 650;
         letter-spacing: .07em;
         opacity: .7;
       }
@@ -358,7 +360,7 @@ st.markdown(
       }
       .cp-pill {
         display: inline-block; border-radius: 999px; padding: .2rem .65rem;
-        margin: .12rem .18rem .12rem 0; font-size: .78rem; font-weight: 650;
+        margin: .12rem .18rem .12rem 0; font-size: .74rem; font-weight: 600;
         background: rgba(99,88,232,.1); border: 1px solid rgba(99,88,232,.18);
       }
       .cp-decision {
@@ -394,7 +396,7 @@ st.markdown(
         border-radius: 999px;
         padding: .2rem .5rem;
         font-size: var(--cp-type-micro);
-        font-weight: 820;
+        font-weight: 650;
         letter-spacing: .07em;
         opacity: .72;
       }
@@ -407,10 +409,10 @@ st.markdown(
       }
       .cp-decision-word {
         margin-top: .12rem;
-        font-size: clamp(1.55rem, 2.4vw, 2.05rem);
+        font-size: clamp(2rem, 3.1vw, 2.7rem);
         line-height: 1;
-        font-weight: 830;
-        letter-spacing: -.045em;
+        font-weight: 650;
+        letter-spacing: .045em;
       }
       .cp-decision-copy {margin-top: .48rem; max-width: 520px; font-size: var(--cp-type-copy); line-height: 1.48; opacity: .82;}
       .cp-decision-kpis {
@@ -425,7 +427,7 @@ st.markdown(
         border-radius: .66rem;
         padding: .52rem .58rem;
       }
-      .cp-decision-kpi-value {font-size: .82rem; font-weight: 760; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-decision-kpi-value {font-size: .82rem; font-weight: 650; margin-top: .12rem; overflow-wrap: anywhere;}
       .cp-decision-reason {
         margin-top: .78rem;
         padding-top: .68rem;
@@ -459,7 +461,7 @@ st.markdown(
         font-size: var(--cp-type-micro);
         font-weight: 820;
       }
-      .cp-route-state {font-weight: 780; font-size: .86rem; margin-top: .28rem;}
+      .cp-route-state {font-weight: 650; font-size: .86rem; margin-top: .28rem;}
       .cp-route-detail {font-size: var(--cp-type-meta); opacity: .74; margin-top: .12rem;}
       .cp-route-arrow {align-self: center; color: #6558e8; opacity: .42; font-size: 1.05rem;}
       .cp-route-step[data-state="SKIPPED"], .cp-route-step[data-state="NO CALL"] {opacity: .52; background: transparent;}
@@ -499,7 +501,7 @@ st.markdown(
         border-radius: .4rem;
         padding: .16rem .3rem;
         font-size: var(--cp-type-micro);
-        font-weight: 820;
+        font-weight: 650;
         letter-spacing: .045em;
       }
       .cp-status-mark {
@@ -524,7 +526,7 @@ st.markdown(
         border-top: 1px solid rgba(128,128,128,.12);
       }
       .cp-check-metric-label {display: block; font-size: var(--cp-type-micro); text-transform: uppercase; letter-spacing: .055em; opacity: .58;}
-      .cp-check-metric-value {display: block; margin-top: .12rem; font-size: var(--cp-type-label); font-weight: 680; overflow-wrap: anywhere;}
+      .cp-check-metric-value {display: block; margin-top: .12rem; font-size: var(--cp-type-label); font-weight: 650; overflow-wrap: anywhere;}
       .cp-check-reason {
         border-top: 1px solid rgba(128,128,128,.12);
         font-size: .72rem;
@@ -557,7 +559,7 @@ st.markdown(
         padding: .2rem .42rem;
         color: var(--cp-amber);
         font-size: var(--cp-type-micro);
-        font-weight: 800;
+        font-weight: 650;
       }
       .cp-review-state[data-status="REVIEWED"] {
         border-color: rgba(5,150,105,.32);
@@ -575,7 +577,7 @@ st.markdown(
         padding-top: .48rem;
         min-width: 0;
       }
-      .cp-review-kpi-value {font-size: var(--cp-type-meta); font-weight: 720; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-review-kpi-value {font-size: var(--cp-type-meta); font-weight: 650; margin-top: .12rem; overflow-wrap: anywhere;}
       .cp-review-reason {
         margin-top: .65rem;
         font-size: .82rem;
@@ -587,6 +589,7 @@ st.markdown(
       .cp-bad {background: rgba(239,68,68,.11); border: 1px solid rgba(239,68,68,.34);}
       div[data-testid="stDataFrame"] {border: 1px solid rgba(128,128,128,.16); border-radius: .6rem;}
       div[data-testid="stExpander"] {border-color: var(--cp-border); border-radius: .72rem;}
+      div[data-testid="stExpander"] summary p {font-size: var(--cp-type-meta); letter-spacing: .015em;}
       @media (max-width: 900px) {
         .cp-summary-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}
         .cp-decision-main {grid-template-columns: 1fr;}
