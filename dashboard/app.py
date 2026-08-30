@@ -76,6 +76,7 @@ st.markdown(
         gap: .68rem;
         min-width: 0;
         height: 2.5rem;
+        transform: translateY(-.55rem);
       }
       .cp-topbar-mark {
         display: grid;

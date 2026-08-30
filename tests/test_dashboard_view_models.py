@@ -349,6 +349,7 @@ def test_dashboard_uses_centered_top_navigation():
     assert "with st.sidebar:" not in source
     assert 'class="cp-topbar-brand"' in source
     assert 'class="cp-topbar-copy"' in source
+    assert "transform: translateY(-.55rem)" in source
     assert 'st.popover("Connection"' in source
     assert "max-width: none" in source
     assert "padding-top: 4.25rem" in source
