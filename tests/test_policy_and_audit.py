@@ -314,6 +314,29 @@ def test_feedback_contributes_to_history_and_metrics(evaluator):
     assert metrics["feedback_labels"] == {"UNSAFE_ESCAPE": 1}
 
 
+def test_feedback_with_identical_timestamps_returns_newest_first(tmp_path):
+    repository = AuditRepository(tmp_path / "feedback-order.db")
+    repository.add_feedback(
+        "evaluation-1", "reviewer-1", "REVIEW_BLOCK", "Keep it blocked."
+    )
+    repository.add_feedback(
+        "evaluation-1", "reviewer-2", "REVIEW_APPROVE", "Approved after review."
+    )
+    connection = repository.connect()
+    connection.execute(
+        "UPDATE feedback SET created_at = '2026-08-30 10:00:00'"
+    )
+    connection.commit()
+    connection.close()
+
+    records = repository.list_feedback()
+
+    assert [record["label"] for record in records] == [
+        "REVIEW_APPROVE",
+        "REVIEW_BLOCK",
+    ]
+
+
 def test_repeated_regeneration_history_promotes_similar_answers_to_escalation(
     evaluator,
 ):

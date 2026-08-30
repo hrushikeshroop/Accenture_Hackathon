@@ -177,7 +177,9 @@ class AuditRepository:
     def list_feedback(self, limit: int = 10000) -> list[dict[str, Any]]:
         with closing(self.connect()) as connection:
             rows = connection.execute(
-                "SELECT * FROM feedback ORDER BY created_at DESC LIMIT ?", (limit,)
+                "SELECT * FROM feedback "
+                "ORDER BY created_at DESC, id DESC LIMIT ?",
+                (limit,),
             ).fetchall()
         return [dict(row) for row in rows]
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 from pathlib import Path
 from typing import Any
@@ -317,6 +318,17 @@ def test_dashboard_default_page_loads_without_api_call():
     }
 
 
+def test_scenario_group_switch_updates_available_cases():
+    app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
+    app.run(timeout=15)
+    app.selectbox[0].set_value("Support · Informational").run(timeout=15)
+
+    assert not app.exception
+    assert len(app.selectbox[1].options) == 6
+    assert "Evidence-backed refund FAQ" in app.selectbox[1].options
+    assert "Destructive production command" not in app.selectbox[1].options
+
+
 def test_dashboard_uses_centered_top_navigation():
     source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
     app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
@@ -336,6 +348,69 @@ def test_dashboard_uses_centered_top_navigation():
         "Metrics",
         "Feedback",
     ]
+
+
+def test_dashboard_has_no_bare_conditional_expressions_for_streamlit_magic():
+    source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+
+    bare_conditionals = [
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.IfExp)
+    ]
+
+    assert bare_conditionals == []
+
+
+def test_dashboard_pages_render_safe_empty_states(monkeypatch):
+    empty_metrics = {
+        "total_evaluations": 0,
+        "average_latency_ms": 0,
+        "average_checks_executed": 0,
+        "total_model_calls": 0,
+        "decisions": {},
+        "stop_reasons": {},
+        "by_use_case": {},
+        "average_cost_units": 0,
+        "feedback_count": 0,
+        "feedback_labels": {},
+    }
+
+    class FakeResponse:
+        def __init__(self, payload: Any):
+            self.payload = payload
+
+        @staticmethod
+        def raise_for_status() -> None:
+            return None
+
+        def json(self) -> Any:
+            return self.payload
+
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if url.endswith("/metrics"):
+            return FakeResponse(empty_metrics)
+        if url.endswith(("/evaluations", "/feedback", "/policies")):
+            return FakeResponse([])
+        raise AssertionError(f"Unexpected dashboard API request: {method} {url}")
+
+    monkeypatch.setattr(requests, "request", fake_request)
+    expected_empty_copy = {
+        "Human review": "No human-review cases are waiting",
+        "Audit trail": "No audit records yet",
+        "Policies": "No policy profiles are available",
+        "Metrics": "Run scenarios to populate decision metrics",
+        "Feedback": "Run at least one scenario",
+    }
+    for page, expected_copy in expected_empty_copy.items():
+        app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
+        app.run(timeout=15)
+        app.radio[0].set_value(page).run(timeout=15)
+
+        assert not app.exception, page
+        messages = [item.value for item in [*app.info, *app.caption]]
+        assert any(expected_copy in message for message in messages), page
 
 
 def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):

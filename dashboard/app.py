@@ -1510,7 +1510,10 @@ elif page == "Human review":
                 if queue_view == "Pending"
                 else f"No {queue_view.lower()} escalation cases are available."
             )
-            st.success(message) if queue_view == "Pending" else st.info(message)
+            if queue_view == "Pending":
+                st.success(message)
+            else:
+                st.info(message)
         else:
             selected_evaluation = st.selectbox(
                 "Open escalation case",
@@ -1587,6 +1590,12 @@ elif page == "Policies":
         "One middleware engine; different checks, budgets, sources, and vetoes per AI use case."
     )
     policies = api_json("GET", "/policies")
+    if not policies:
+        st.info(
+            "No policy profiles are available. Check the middleware policy directory "
+            "and restart the API."
+        )
+        st.stop()
     st.dataframe(
         [
             {
