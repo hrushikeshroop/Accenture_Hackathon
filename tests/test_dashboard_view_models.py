@@ -295,7 +295,7 @@ def test_dashboard_default_page_loads_without_api_call():
     app.run(timeout=15)
 
     assert not app.exception
-    assert app.subheader[0].value == "Decision walkthrough"
+    assert app.subheader[0].value == "Evaluate a scenario"
     assert len(app.selectbox) == 2
     assert list(app.selectbox[0].options) == [
         "Engineering · Production",
@@ -306,6 +306,10 @@ def test_dashboard_default_page_loads_without_api_call():
     assert len(app.selectbox[1].options) == 4
     assert any(
         "AI candidate under review" in markdown.value for markdown in app.markdown
+    )
+    assert any(
+        "Inspect the middleware decision for an AI output" in markdown.value
+        for markdown in app.markdown
     )
     assert any(
         "Reset the production environment" in markdown.value
@@ -339,6 +343,9 @@ def test_dashboard_uses_centered_top_navigation():
     assert 'class="cp-topbar-brand"' in source
     assert 'st.popover("Connection"' in source
     assert "max-width: none" in source
+    assert "padding-top: 4.25rem" in source
+    assert "latency_budget_ms" not in source
+    assert "Trust is a decision, not a default" not in source
     assert "horizontal=True" in source
     assert list(app.radio[0].options) == [
         "Run scenario",
@@ -517,10 +524,14 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         "Middleware verification result" in markdown.value for markdown in app.markdown
     )
     assert any("Checker verdicts" in markdown.value for markdown in app.markdown)
-    assert any("Risk versus latency" in markdown.value for markdown in app.markdown)
+    assert any("Risk and runtime" in markdown.value for markdown in app.markdown)
     assert any("Verification route" in markdown.value for markdown in app.markdown)
     assert any(
-        "Latency / budget" in markdown.value and "100" in markdown.value
+        "Observed latency" in markdown.value and "1.2 ms" in markdown.value
+        for markdown in app.markdown
+    )
+    assert not any(
+        "Latency budget" in markdown.value or "Latency / budget" in markdown.value
         for markdown in app.markdown
     )
     assert any(

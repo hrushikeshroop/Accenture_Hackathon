@@ -53,7 +53,7 @@ st.markdown(
         max-width: none;
         width: 100%;
         box-sizing: border-box;
-        padding-top: .75rem;
+        padding-top: 4.25rem;
         padding-left: 1.25rem;
         padding-right: 1.25rem;
         padding-bottom: 3rem;
@@ -249,13 +249,11 @@ st.markdown(
       .cp-hero {
         position: relative;
         overflow: hidden;
-        border: 1px solid rgba(99, 88, 232, .22);
-        background:
-          radial-gradient(circle at 88% 20%, rgba(8,145,178,.12), transparent 25%),
-          linear-gradient(120deg, rgba(99,88,232,.12), rgba(8,145,178,.04));
+        border: 1px solid var(--cp-border);
+        background: rgba(128,128,128,.025);
         border-radius: 1.1rem;
-        padding: 1.15rem 1.35rem;
-        margin-bottom: 1.35rem;
+        padding: .9rem 1.1rem;
+        margin-bottom: 1.1rem;
       }
       .cp-hero-top {
         display: flex;
@@ -289,18 +287,6 @@ st.markdown(
         border-radius: 50%;
         background: var(--cp-green);
         box-shadow: 0 0 0 4px rgba(5,150,105,.1);
-      }
-      .cp-hero-tags {margin-top: .75rem;}
-      .cp-hero-tag {
-        display: inline-block;
-        margin: .12rem .25rem .12rem 0;
-        padding: .22rem .55rem;
-        border: 1px solid rgba(99,88,232,.16);
-        background: rgba(255,255,255,.035);
-        border-radius: 999px;
-        font-size: .7rem;
-        font-weight: 650;
-        opacity: .76;
       }
       .cp-section-heading {
         display: flex;
@@ -539,11 +525,6 @@ st.markdown(
         margin: .4rem 0 .95rem 0;
       }
       .cp-tradeoff-copy {font-size: .78rem; line-height: 1.45; opacity: .74; margin-top: .23rem;}
-      .cp-budget-head {display: flex; justify-content: space-between; gap: .6rem; font-size: .72rem; font-weight: 700;}
-      .cp-budget-track {height: .42rem; border-radius: 999px; background: rgba(128,128,128,.14); margin: .55rem 0 .3rem 0; overflow: hidden;}
-      .cp-budget-fill {height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6558e8, #0891b2);}
-      .cp-budget-fill.cp-over {background: linear-gradient(90deg, #d97706, #dc2626);}
-      .cp-budget-caption {font-size: .66rem; opacity: .62;}
       .cp-check-head {display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-top: .2rem;}
       .cp-check-counts {display: flex; flex-wrap: wrap; gap: .65rem; justify-content: flex-end;}
       .cp-count-stat {font-size: .65rem; opacity: .64; white-space: nowrap;}
@@ -766,10 +747,7 @@ def render_decision_banner(result: dict[str, Any]) -> None:
     if counts["UNKNOWN"]:
         check_summary += f" · {counts['UNKNOWN']} unknown"
     latency_ms = float(result.get("latency_ms", 0))
-    budget_ms = float(result.get("latency_budget_ms", 0))
     latency_value = f"{latency_ms:.1f} ms"
-    if budget_ms > 0:
-        latency_value = f"{latency_ms:.1f} / {budget_ms:.0f} ms"
     model_calls = int(result.get("model_calls", 0))
     judge_value = (
         "Not needed"
@@ -792,7 +770,7 @@ def render_decision_banner(result: dict[str, Any]) -> None:
         '<div class="cp-decision-kpis">'
         '<div class="cp-decision-kpi"><div class="cp-label">Risk</div>'
         f'<div class="cp-decision-kpi-value">{html.escape(str(result.get("risk_profile", {}).get("tier", "—")))}</div></div>'
-        '<div class="cp-decision-kpi"><div class="cp-label">Latency / budget</div>'
+        '<div class="cp-decision-kpi"><div class="cp-label">Observed latency</div>'
         f'<div class="cp-decision-kpi-value">{html.escape(latency_value)}</div></div>'
         '<div class="cp-decision-kpi"><div class="cp-label">Check outcome</div>'
         f'<div class="cp-decision-kpi-value">{html.escape(check_summary)}</div></div>'
@@ -808,8 +786,8 @@ def render_decision_banner(result: dict[str, Any]) -> None:
 def render_adaptive_route(result: dict[str, Any]) -> None:
     st.markdown("#### Verification route")
     st.markdown(
-        '<div class="cp-route-note">Fail fast locally, add governed evidence when needed, '
-        "and pay for the live judge only when uncertainty remains.</div>",
+        '<div class="cp-route-note">Local checks run first. Governed evidence and Groq '
+        "are used only when earlier stages do not resolve the case.</div>",
         unsafe_allow_html=True,
     )
     stages = verification_route(result)
@@ -896,42 +874,24 @@ def render_checker_summary(checks: list[dict[str, Any]]) -> None:
 def render_result_overview(result: dict[str, Any]) -> None:
     risk = result.get("risk_profile", {})
     latency_ms = float(result.get("latency_ms", 0))
-    latency_budget_ms = float(result.get("latency_budget_ms", 0))
-    budget_used = (
-        latency_ms / latency_budget_ms * 100 if latency_budget_ms > 0 else None
-    )
-    budget_label = "No policy budget"
-    budget_caption = f"Observed latency: {latency_ms:.1f} ms"
-    width = 0.0
-    over_class = ""
-    if budget_used is not None:
-        budget_label = f"{latency_ms:.1f} of {latency_budget_ms:.0f} ms"
-        budget_caption = f"{budget_used:.1f}% used · " + (
-            "within policy budget" if budget_used <= 100 else "policy budget exceeded"
-        )
-        width = min(max(budget_used, 0.0), 100.0)
-        over_class = " cp-over" if budget_used > 100 else ""
     model_calls = int(result.get("model_calls", 0))
-    tradeoff_copy = (
-        f"Uncertainty required {model_calls} live Groq judge "
-        f"call{'s' if model_calls != 1 else ''}."
+    route_cost = (
+        f"{model_calls} live Groq judge call{'s' if model_calls != 1 else ''}"
         if model_calls
-        else "No live judge call was needed; the route stopped when policy had enough signal."
+        else "Local and evidence checks only"
     )
-    st.markdown("#### Risk versus latency")
+    st.markdown("#### Risk and runtime")
     st.markdown(
         '<div class="cp-tradeoff"><div>'
-        '<div class="cp-label">Adaptive routing</div>'
+        '<div class="cp-label">Decision context</div>'
         f'<div class="cp-summary-value">{html.escape(str(risk.get("tier", "—")))} risk · '
         f"{int(result.get('checks_executed', 0))} checks</div>"
-        f'<div class="cp-tradeoff-copy">{html.escape(tradeoff_copy)} '
+        '<div class="cp-tradeoff-copy">'
         f"Evidence: {html.escape(str(result.get('evidence_state', '—')).replace('_', ' ').title())} · "
         f"Authorization: {html.escape(str(result.get('authorization_state', '—')).replace('_', ' ').title())}</div>"
-        '</div><div><div class="cp-budget-head"><span>Latency budget</span>'
-        f"<span>{html.escape(budget_label)}</span></div>"
-        '<div class="cp-budget-track">'
-        f'<div class="cp-budget-fill{over_class}" style="width:{width:.1f}%"></div></div>'
-        f'<div class="cp-budget-caption">{html.escape(budget_caption)}</div></div></div>',
+        '</div><div><div class="cp-label">Observed runtime</div>'
+        f'<div class="cp-summary-value">{latency_ms:.1f} ms</div>'
+        f'<div class="cp-tradeoff-copy">{html.escape(route_cost)}</div></div></div>',
         unsafe_allow_html=True,
     )
     stop = str(result.get("stop_reason", "—")).replace("_", " ").title()
@@ -1249,17 +1209,11 @@ st.markdown(
     <div class="cp-hero">
       <div class="cp-hero-top">
         <div>
-          <div class="cp-label">AI decision middleware</div>
-          <h1>Trust is a decision, not a default.</h1>
-          <div class="cp-hero-copy">ControlPlane evaluates an AI candidate against risk, policy,
-          evidence, and authorization before it can reach a user or execute a tool.</div>
+          <h1>Inspect the middleware decision for an AI output.</h1>
+          <div class="cp-hero-copy">Each run shows the candidate, risk tier, selected checks,
+          evidence, observed latency, and final action before release.</div>
         </div>
         <div class="cp-system-state"><span class="cp-system-dot"></span>STAGE 2 POC</div>
-      </div>
-      <div class="cp-hero-tags">
-        <span class="cp-hero-tag">Risk-adaptive routing</span>
-        <span class="cp-hero-tag">Governed evidence</span>
-        <span class="cp-hero-tag">Groq judge on demand</span>
       </div>
     </div>
     """,
@@ -1271,9 +1225,9 @@ if review_flash:
     st.success(review_flash)
 
 if page == "Run scenario":
-    st.subheader("Decision walkthrough")
+    st.subheader("Evaluate a scenario")
     st.caption(
-        "Choose a prepared case, inspect the AI candidate, then watch the middleware route it."
+        "Select a prepared case, review its AI candidate, then run ControlPlane verification."
     )
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
     scenario_payloads = {
@@ -1587,7 +1541,7 @@ elif page == "Audit trail":
 elif page == "Policies":
     st.subheader("Versioned policy profiles")
     st.caption(
-        "One middleware engine; different checks, budgets, sources, and vetoes per AI use case."
+        "Checks, evidence sources, and vetoes vary by AI use case."
     )
     policies = api_json("GET", "/policies")
     if not policies:
@@ -1603,7 +1557,6 @@ elif page == "Policies":
                 "Version": policy["version"],
                 "Use case": policy["use_case"],
                 "Base risk": policy["base_risk"],
-                "Latency budget (ms)": policy["latency_budget_ms"],
                 "Fail mode": policy["fail_mode"],
                 "Sources": len(policy.get("source_ids", [])),
             }
