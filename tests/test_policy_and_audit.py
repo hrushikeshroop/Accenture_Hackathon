@@ -11,6 +11,7 @@ from controlplane.schemas.check_result import CheckResult, CheckStatus
 from controlplane.schemas.decision import DecisionAction, RiskTier, StopReason
 from controlplane.schemas.event import Actor, Candidate, ControlEvent
 from controlplane.schemas.policy import PolicyConfig
+from controlplane.security.redaction import redact_data
 from controlplane.services.metrics_service import MetricsService
 from controlplane.settings import PROJECT_ROOT
 from controlplane.storage import policy_repository as policy_repository_module
@@ -98,6 +99,38 @@ def test_evaluation_is_audited_and_replayable(evaluator):
     replay = asyncio.run(evaluator.replay(result.evaluation_id))
     assert replay.event_id.endswith("-replay")
     assert replay.decision == result.decision
+
+
+def test_audit_restores_canonical_ids_when_redaction_matches_uuid_digits(tmp_path):
+    evaluation_id = "a670e266-4572-4652-9345-96d11771c57d"
+    event_id = "event-a670e266-4572-4652-9345"
+    repository = AuditRepository(tmp_path / "canonical-ids.db")
+    repository.save(
+        evaluation_id=evaluation_id,
+        event_id=event_id,
+        fingerprint="support.transactional:candidate_response:unstructured_response",
+        use_case="support.transactional",
+        policy_id="support-transactional",
+        policy_version="1.0",
+        decision="ESCALATE",
+        risk_tier="HIGH",
+        event=redact_data({"event_id": event_id, "candidate": {"text": "Held"}}),
+        result=redact_data(
+            {
+                "evaluation_id": evaluation_id,
+                "event_id": event_id,
+                "decision": "ESCALATE",
+            }
+        ),
+    )
+
+    stored = repository.get(evaluation_id)
+
+    assert stored is not None
+    assert stored["evaluation_id"] == evaluation_id
+    assert stored["event"]["event_id"] == event_id
+    assert stored["result"]["evaluation_id"] == evaluation_id
+    assert stored["result"]["event_id"] == event_id
 
 
 def test_history_can_raise_routing_signal(evaluator):

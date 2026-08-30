@@ -184,7 +184,15 @@ class AuditRepository:
     @staticmethod
     def _row(row: sqlite3.Row) -> dict[str, Any]:
         result = dict(row)
+        evaluation_id = result["evaluation_id"]
+        event_id = result["event_id"]
         result["is_replay"] = bool(result.get("is_replay", 0))
         result["event"] = json.loads(result.pop("event_json"))
         result["result"] = json.loads(result.pop("result_json"))
+        # Pattern-based PII redaction can mistake UUID digit groups for a card number.
+        # These canonical machine IDs already live in dedicated database columns, so
+        # restore them after decoding the redacted JSON to preserve referential integrity.
+        result["event"]["event_id"] = event_id
+        result["result"]["evaluation_id"] = evaluation_id
+        result["result"]["event_id"] = event_id
         return result
