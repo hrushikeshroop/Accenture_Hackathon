@@ -174,7 +174,9 @@ demo recording.
 Run the complete local verification:
 
 ```powershell
+$env:CONTROLPLANE_RUN_LIVE_JUDGE="1"
 pytest -q
+Remove-Item Env:CONTROLPLANE_RUN_LIVE_JUDGE
 python scripts\run_all_scenarios.py
 python evaluation\run_evaluation.py
 python scripts\run_policy_replay_demo.py
@@ -183,20 +185,22 @@ python scripts\run_model_judge_demo.py
 
 Current repository results:
 
-- **114 automated tests passed**; 3 opt-in live Groq tests are skipped by default.
+- **117 automated tests passed** in the configured full run, including 3 live Groq
+  integration cases.
 - **17/17 labelled scenarios** matched their expected actions.
 - **0.0 false-block rate** on the included labelled fixtures.
 - **0.0 unsafe-escape rate** on the included labelled fixtures.
 - **4.53 average checks** executed per deterministic scenario.
 - **0 external model calls** during the deterministic evaluation suite.
 
-To run the opt-in live tests:
+The live integration cases reached Groq and produced the intended proportional
+outcomes:
 
-```powershell
-$env:CONTROLPLANE_RUN_LIVE_JUDGE="1"
-pytest -m live -q
-Remove-Item Env:CONTROLPLANE_RUN_LIVE_JUDGE
-```
+| Live case | Risk | Observed action |
+|---|---|---|
+| Mixed-evidence refund answer | `MEDIUM` | `REGENERATE` |
+| Unsupported high-risk guarantee | `HIGH` | `ESCALATE` |
+| Unsupported plan-change promise | `CRITICAL` | `ESCALATE` |
 
 These measurements describe only the included simulated fixtures. They are not claims
 of production accuracy, safety, throughput, or provider availability.
