@@ -23,6 +23,13 @@ from dashboard.view_models import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
+SCENARIO_GROUPS = {
+    "Engineering · Production": "engineering.production",
+    "Engineering · Development": "engineering.development",
+    "Support · Transactional": "support.transactional",
+    "Support · Informational": "support.informational",
+}
+
 st.set_page_config(
     page_title="ControlPlane.ai · Decision Console",
     page_icon="CP",
@@ -43,21 +50,25 @@ st.markdown(
       #MainMenu, footer {visibility: hidden;}
       header[data-testid="stHeader"] {background: transparent;}
       .block-container {
-        max-width: 1120px;
-        padding-top: 1rem;
+        max-width: none;
+        width: 100%;
+        box-sizing: border-box;
+        padding-top: .75rem;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
         padding-bottom: 3rem;
       }
       [data-testid="stSidebar"], [data-testid="collapsedControl"] {display: none;}
-      .cp-topbar {
-        display: flex;
+      [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) {
         align-items: center;
-        justify-content: space-between;
-        gap: 1.2rem;
         border: 1px solid var(--cp-border);
         border-radius: .9rem;
         background: rgba(128,128,128,.025);
-        padding: .72rem .85rem;
-        margin-bottom: .55rem;
+        padding: .42rem .55rem;
+        margin-bottom: .7rem;
+      }
+      [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) [data-testid="column"] {
+        min-width: 0;
       }
       .cp-topbar-brand {display: flex; align-items: center; gap: .68rem; min-width: 0;}
       .cp-topbar-mark {
@@ -73,22 +84,23 @@ st.markdown(
       }
       .cp-topbar-product {font-size: .9rem; font-weight: 780; line-height: 1.15;}
       .cp-topbar-mode {font-size: .65rem; opacity: .58; margin-top: .14rem;}
-      .cp-topbar-route {text-align: right; font-size: .68rem; line-height: 1.4; opacity: .68;}
-      .cp-topbar-route strong {display: block; opacity: 1;}
       [data-testid="stMain"] [data-testid="stRadio"] > label {display: none;}
-      [data-testid="stMain"] [data-testid="stRadio"] {margin-bottom: .45rem;}
+      [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) [data-testid="stRadio"] {
+        margin-bottom: 0;
+      }
       [data-testid="stMain"] div[role="radiogroup"] {
         display: flex;
-        flex-wrap: wrap;
-        gap: .32rem;
-        border-bottom: 1px solid var(--cp-border);
-        padding-bottom: .55rem;
+        justify-content: center;
+        flex-wrap: nowrap;
+        gap: .12rem;
+        border-bottom: 0;
+        padding-bottom: 0;
       }
       [data-testid="stMain"] div[role="radiogroup"] label {
-        min-height: 2.45rem;
+        min-height: 2.25rem;
         border: 1px solid transparent;
         border-radius: .62rem;
-        padding: .42rem .68rem;
+        padding: .34rem .58rem;
         transition: background-color .15s ease, border-color .15s ease;
       }
       [data-testid="stMain"] div[role="radiogroup"] label:hover {
@@ -104,6 +116,10 @@ st.markdown(
       [data-testid="stMain"] div[role="radiogroup"] label p {
         font-size: .74rem;
         font-weight: 690;
+      }
+      [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) [data-testid="stPopover"] button {
+        min-height: 2.25rem;
+        white-space: nowrap;
       }
       [data-testid="stSidebar"] {
         border-right: 1px solid var(--cp-border);
@@ -649,8 +665,8 @@ st.markdown(
         .cp-route-arrow {display: none;}
       }
       @media (max-width: 650px) {
-        .cp-topbar {display: block;}
-        .cp-topbar-route {text-align: left; margin-top: .65rem;}
+        .block-container {padding-left: .75rem; padding-right: .75rem;}
+        [data-testid="stMain"] div[role="radiogroup"] {flex-wrap: wrap;}
         [data-testid="stMain"] div[role="radiogroup"] label {flex: 1 1 8rem;}
         .cp-hero-top {display: block;}
         .cp-system-state {margin-top: .75rem;}
@@ -1093,7 +1109,10 @@ def render_human_review_handoff(
                     "reason": note,
                 },
             )
-            st.success("Reviewer disposition recorded in the audit trail.")
+            st.session_state["review_flash"] = (
+                "Reviewer disposition recorded in the audit trail."
+            )
+            st.rerun()
 
 
 def render_verification_trace(result: dict[str, Any]) -> None:
@@ -1192,34 +1211,34 @@ navigation_labels = {
     "Feedback": "Feedback",
 }
 
-st.markdown(
-    '<div class="cp-topbar">'
-    '<div class="cp-topbar-brand"><div class="cp-topbar-mark">CP</div><div>'
-    '<div class="cp-topbar-product">ControlPlane.ai</div>'
-    '<div class="cp-topbar-mode">Decision console · Stage 2 proof of concept</div>'
-    "</div></div>"
-    '<div class="cp-topbar-route"><strong>Adaptive verification</strong>'
-    "Local checks → governed evidence → Groq judge fallback</div></div>",
-    unsafe_allow_html=True,
+brand_column, navigation_column, connection_column = st.columns(
+    [1.45, 4.8, 1.05], gap="small", vertical_alignment="center"
 )
-page = st.radio(
-    "Navigate",
-    list(navigation_labels),
-    format_func=navigation_labels.get,
-    horizontal=True,
-    label_visibility="collapsed",
-    key="top-navigation",
-)
-with st.expander("Connection settings"):
-    connection_column, test_column = st.columns([4, 1])
-    with connection_column:
+with brand_column:
+    st.markdown(
+        '<div class="cp-topbar-brand"><div class="cp-topbar-mark">CP</div><div>'
+        '<div class="cp-topbar-product">ControlPlane.ai</div>'
+        '<div class="cp-topbar-mode">Stage 2 decision console</div>'
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
+with navigation_column:
+    page = st.radio(
+        "Navigate",
+        list(navigation_labels),
+        format_func=navigation_labels.get,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="top-navigation",
+    )
+with connection_column:
+    with st.popover("Connection", width="stretch"):
         API_URL = st.text_input(
             "Middleware API",
             "http://localhost:8000",
-            label_visibility="collapsed",
+            key="middleware-api-url",
         ).rstrip("/")
-    with test_column:
-        if st.button("Test middleware connection", use_container_width=True):
+        if st.button("Test middleware connection", width="stretch"):
             health = api_json("GET", "/health", timeout=3)
             st.success(
                 "API connected" if health.get("status") == "ok" else "API responded"
@@ -1247,19 +1266,43 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+review_flash = st.session_state.pop("review_flash", None)
+if review_flash:
+    st.success(review_flash)
+
 if page == "Run scenario":
     st.subheader("Decision walkthrough")
     st.caption(
         "Choose a prepared case, inspect the AI candidate, then watch the middleware route it."
     )
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
-    selected = st.selectbox(
-        "Choose a scenario",
-        scenario_paths,
-        format_func=lambda path: scenario_meta(path, PROJECT_ROOT)["title"],
-    )
+    scenario_payloads = {
+        path: json.loads(path.read_text(encoding="utf-8")) for path in scenario_paths
+    }
+    available_groups = {
+        label: use_case
+        for label, use_case in SCENARIO_GROUPS.items()
+        if any(
+            payload.get("use_case") == use_case
+            for payload in scenario_payloads.values()
+        )
+    }
+    group_column, scenario_column = st.columns([1, 2])
+    with group_column:
+        selected_group = st.selectbox("Scenario group", list(available_groups))
+    grouped_paths = [
+        path
+        for path, scenario_payload in scenario_payloads.items()
+        if scenario_payload.get("use_case") == available_groups[selected_group]
+    ]
+    with scenario_column:
+        selected = st.selectbox(
+            "Scenario",
+            grouped_paths,
+            format_func=lambda path: scenario_meta(path, PROJECT_ROOT)["title"],
+        )
     meta = scenario_meta(selected, PROJECT_ROOT)
-    payload = json.loads(selected.read_text(encoding="utf-8"))
+    payload = scenario_payloads[selected]
 
     request_key = next(
         (
@@ -1390,9 +1433,25 @@ if page == "Run scenario":
             "</div></div>",
             unsafe_allow_html=True,
         )
+        last_result = st.session_state["last_result"]
+        latest_inline_review = None
+        if last_result.get("decision") == "ESCALATE":
+            evaluation_id = str(last_result.get("evaluation_id", ""))
+            reviews = api_json(
+                "GET", "/feedback", params={"evaluation_id": evaluation_id}
+            )
+            latest_inline_review = next(
+                (
+                    review
+                    for review in reviews
+                    if str(review.get("label", "")).startswith("REVIEW_")
+                ),
+                None,
+            )
         render_result(
-            st.session_state["last_result"],
+            last_result,
             event=st.session_state.get("last_event", payload),
+            latest_review=latest_inline_review,
             progressive=True,
         )
 
@@ -1427,33 +1486,59 @@ elif page == "Human review":
             "No human-review cases are waiting. Run an ESCALATE scenario to create one."
         )
     else:
-        selected_evaluation = st.selectbox(
-            "Open escalation case",
-            [record["evaluation_id"] for record in escalations],
-            format_func=lambda evaluation_id: next(
-                (
-                    f"{'Reviewed' if evaluation_id in latest_reviews else 'Pending'} · "
-                    f"{record['result'].get('use_case', record['use_case'])} · "
-                    f"{evaluation_id[:8]}"
-                )
-                for record in escalations
-                if record["evaluation_id"] == evaluation_id
-            ),
+        queue_view = st.selectbox(
+            "Queue view",
+            ["Pending", "Reviewed", "All"],
+            key="human-review-queue-view",
         )
-        selected_record = next(
+        visible_escalations = [
             record
             for record in escalations
-            if record["evaluation_id"] == selected_evaluation
-        )
-        render_human_review_handoff(
-            selected_record["result"],
-            event=selected_record["event"],
-            created_at=selected_record.get("created_at"),
-            latest_review=latest_reviews.get(selected_evaluation),
-            key_scope="queue",
-        )
-        with st.expander("Raw redacted escalation record"):
-            st.json(selected_record, expanded=False)
+            if queue_view == "All"
+            or (
+                queue_view == "Reviewed"
+                and record["evaluation_id"] in latest_reviews
+            )
+            or (
+                queue_view == "Pending"
+                and record["evaluation_id"] not in latest_reviews
+            )
+        ]
+        if not visible_escalations:
+            message = (
+                "No pending reviews. Every escalated case has a recorded disposition."
+                if queue_view == "Pending"
+                else f"No {queue_view.lower()} escalation cases are available."
+            )
+            st.success(message) if queue_view == "Pending" else st.info(message)
+        else:
+            selected_evaluation = st.selectbox(
+                "Open escalation case",
+                [record["evaluation_id"] for record in visible_escalations],
+                format_func=lambda evaluation_id: next(
+                    (
+                        f"{'Reviewed' if evaluation_id in latest_reviews else 'Pending'} · "
+                        f"{record['result'].get('use_case', record['use_case'])} · "
+                        f"{evaluation_id[:8]}"
+                    )
+                    for record in visible_escalations
+                    if record["evaluation_id"] == evaluation_id
+                ),
+            )
+            selected_record = next(
+                record
+                for record in visible_escalations
+                if record["evaluation_id"] == selected_evaluation
+            )
+            render_human_review_handoff(
+                selected_record["result"],
+                event=selected_record["event"],
+                created_at=selected_record.get("created_at"),
+                latest_review=latest_reviews.get(selected_evaluation),
+                key_scope="queue",
+            )
+            with st.expander("Raw redacted escalation record"):
+                st.json(selected_record, expanded=False)
 
 elif page == "Audit trail":
     st.subheader("Audit trail")

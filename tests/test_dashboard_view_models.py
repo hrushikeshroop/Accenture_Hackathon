@@ -295,8 +295,14 @@ def test_dashboard_default_page_loads_without_api_call():
 
     assert not app.exception
     assert app.subheader[0].value == "Decision walkthrough"
-    assert len(app.selectbox) == 1
-    assert len(app.selectbox[0].options) == 17
+    assert len(app.selectbox) == 2
+    assert list(app.selectbox[0].options) == [
+        "Engineering · Production",
+        "Engineering · Development",
+        "Support · Transactional",
+        "Support · Informational",
+    ]
+    assert len(app.selectbox[1].options) == 4
     assert any(
         "AI candidate under review" in markdown.value for markdown in app.markdown
     )
@@ -306,7 +312,6 @@ def test_dashboard_default_page_loads_without_api_call():
     )
     assert any("DROP TABLE customers" in markdown.value for markdown in app.markdown)
     assert {expander.label for expander in app.expander} == {
-        "Connection settings",
         "More scenario details",
         "Raw scenario JSON",
     }
@@ -319,7 +324,9 @@ def test_dashboard_uses_centered_top_navigation():
 
     assert not app.exception
     assert "with st.sidebar:" not in source
-    assert 'class="cp-topbar"' in source
+    assert 'class="cp-topbar-brand"' in source
+    assert 'st.popover("Connection"' in source
+    assert "max-width: none" in source
     assert "horizontal=True" in source
     assert list(app.radio[0].options) == [
         "Run scenario",
@@ -469,7 +476,6 @@ def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):
         for markdown in app.markdown
     )
     assert {expander.label for expander in app.expander} == {
-        "Connection settings",
         "More scenario details",
         "Raw scenario JSON",
         "More decision details",
@@ -481,15 +487,24 @@ def test_escalated_decision_renders_the_reviewer_packet(monkeypatch):
     result = escalation_result()
 
     class FakeResponse:
+        def __init__(self, payload: Any):
+            self.payload = payload
+
         @staticmethod
         def raise_for_status() -> None:
             return None
 
-        @staticmethod
-        def json() -> dict[str, Any]:
-            return result
+        def json(self) -> Any:
+            return self.payload
 
-    monkeypatch.setattr(requests, "request", lambda *args, **kwargs: FakeResponse())
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if method == "POST" and url.endswith("/evaluate"):
+            return FakeResponse(result)
+        if method == "GET" and url.endswith("/feedback"):
+            return FakeResponse([])
+        raise AssertionError(f"Unexpected dashboard API request: {method} {url}")
+
+    monkeypatch.setattr(requests, "request", fake_request)
     app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
     app.run(timeout=15)
     evaluate = next(
@@ -573,3 +588,69 @@ def test_human_review_queue_loads_redacted_escalation_context(monkeypatch):
     assert "Raw redacted escalation record" in {
         expander.label for expander in app.expander
     }
+
+
+def test_human_review_submission_refreshes_queue_state(monkeypatch):
+    result = escalation_result()
+    record = {
+        "evaluation_id": result["evaluation_id"],
+        "event_id": result["event_id"],
+        "use_case": result["use_case"],
+        "created_at": "2026-08-30 10:00:00",
+        "event": {
+            "event_id": result["event_id"],
+            "use_case": result["use_case"],
+            "candidate": {"text": "A credit is guaranteed to arrive today."},
+            "metadata": {"scenario_title": "Guarantee awaiting review"},
+        },
+        "result": result,
+    }
+    reviews: list[dict[str, Any]] = []
+
+    class FakeResponse:
+        def __init__(self, payload: Any):
+            self.payload = payload
+
+        @staticmethod
+        def raise_for_status() -> None:
+            return None
+
+        def json(self) -> Any:
+            return self.payload
+
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if method == "GET" and url.endswith("/evaluations"):
+            return FakeResponse([record])
+        if method == "GET" and url.endswith("/feedback"):
+            return FakeResponse(reviews)
+        if method == "POST" and url.endswith("/feedback"):
+            review = {
+                **kwargs["json"],
+                "created_at": "2026-08-30 10:05:00",
+            }
+            reviews.insert(0, review)
+            return FakeResponse(review)
+        raise AssertionError(f"Unexpected dashboard API request: {method} {url}")
+
+    monkeypatch.setattr(requests, "request", fake_request)
+    app = AppTest.from_file(str(PROJECT_ROOT / "dashboard" / "app.py"))
+    app.run(timeout=15)
+    app.radio[0].set_value("Human review").run(timeout=15)
+    next(area for area in app.text_area if area.label == "Reviewer note").set_value(
+        "Evidence checked; keep the candidate blocked."
+    )
+    next(
+        button for button in app.button if button.label == "Record reviewer decision"
+    ).click().run(timeout=15)
+
+    assert not app.exception
+    metrics = {metric.label: str(metric.value) for metric in app.metric}
+    assert metrics["Pending review"] == "0"
+    assert metrics["Reviewed"] == "1"
+    assert any(
+        "Reviewer disposition recorded" in message.value for message in app.success
+    )
+    assert any("No pending reviews" in message.value for message in app.success)
+    assert not any(
+        button.label == "Record reviewer decision" for button in app.button
+    )
