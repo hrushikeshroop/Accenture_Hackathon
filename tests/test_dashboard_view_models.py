@@ -462,6 +462,10 @@ def test_dashboard_pages_render_safe_empty_states(monkeypatch):
         assert not app.exception, page
         messages = [item.value for item in [*app.info, *app.caption]]
         assert any(expected_copy in message for message in messages), page
+        assert not any(
+            "Inspect the middleware decision for an AI output" in item.value
+            for item in app.markdown
+        ), page
 
 
 def test_dashboard_evaluate_action_renders_readable_decision(monkeypatch):

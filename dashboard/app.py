@@ -1133,25 +1133,25 @@ with connection_column:
                 "API connected" if health.get("status") == "ok" else "API responded"
             )
 
-st.markdown(
-    """
-    <div class="cp-hero">
-      <div class="cp-hero-top">
-        <div>
-          <h1>Inspect the middleware decision for an AI output.</h1>
-          <div class="cp-hero-copy">Each run shows the candidate, risk tier, selected checks,
-          evidence, observed latency, and final action before release.</div>
-        </div>
-        <div class="cp-system-state"><span class="cp-system-dot"></span>STAGE 2 POC</div>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
 review_flash = st.session_state.pop("review_flash", None)
 
 if page == "Run scenario":
+    st.markdown(
+        """
+        <div class="cp-hero">
+          <div class="cp-hero-top">
+            <div>
+              <h1>Inspect the middleware decision for an AI output.</h1>
+              <div class="cp-hero-copy">Each run shows the candidate, risk tier, selected checks,
+              evidence, observed latency, and final action before release.</div>
+            </div>
+            <div class="cp-system-state"><span class="cp-system-dot"></span>STAGE 2 POC</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
     scenario_signatures = tuple(
         (str(path), path.stat().st_mtime_ns) for path in scenario_paths
