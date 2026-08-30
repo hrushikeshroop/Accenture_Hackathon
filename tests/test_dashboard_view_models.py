@@ -382,6 +382,11 @@ def test_dashboard_uses_intentional_page_widths_and_vertical_candidate_flow():
     assert 'centered_workspace("policies-workspace", 1320)' in source
     assert 'centered_workspace("metrics-workspace", 1320)' in source
     assert 'centered_workspace("feedback-workspace", 920)' in source
+    metrics_source = source.split('elif page == "Metrics":', 1)[1].split("\nelse:", 1)[0]
+    assert metrics_source.count("horizontal=True") == 2
+    assert 'x="Decision"' in metrics_source
+    assert 'x="Stopping reason"' in metrics_source
+    assert metrics_source.count('sort="-Evaluations"') == 2
 
 
 def test_dashboard_uses_a_consistent_compact_typography_scale():

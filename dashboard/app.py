@@ -1583,13 +1583,41 @@ elif page == "Metrics":
     with left:
         st.markdown("#### Decisions")
         if metrics["decisions"]:
-            st.bar_chart(metrics["decisions"])
+            decision_rows = [
+                {
+                    "Decision": decision.replace("_", " ").title(),
+                    "Evaluations": count,
+                }
+                for decision, count in metrics["decisions"].items()
+            ]
+            st.bar_chart(
+                decision_rows,
+                x="Decision",
+                y="Evaluations",
+                horizontal=True,
+                sort="-Evaluations",
+                height=max(220, 84 + (44 * len(decision_rows))),
+            )
         else:
             st.info("Run scenarios to populate decision metrics.")
     with right:
         st.markdown("#### Stopping reasons")
         if metrics["stop_reasons"]:
-            st.bar_chart(metrics["stop_reasons"])
+            stop_reason_rows = [
+                {
+                    "Stopping reason": reason.replace("_", " ").title(),
+                    "Evaluations": count,
+                }
+                for reason, count in metrics["stop_reasons"].items()
+            ]
+            st.bar_chart(
+                stop_reason_rows,
+                x="Stopping reason",
+                y="Evaluations",
+                horizontal=True,
+                sort="-Evaluations",
+                height=max(220, 84 + (44 * len(stop_reason_rows))),
+            )
         else:
             st.info("No stopping-reason data yet.")
     metrics_page.markdown("#### Use-case breakdown")
