@@ -75,11 +75,12 @@ st.markdown(
         align-items: center;
         gap: .68rem;
         min-width: 0;
-        min-height: 2.5rem;
+        height: 2.5rem;
       }
       .cp-topbar-mark {
         display: grid;
         place-items: center;
+        flex: 0 0 2.1rem;
         width: 2.1rem;
         height: 2.1rem;
         border-radius: .62rem;
@@ -87,9 +88,18 @@ st.markdown(
         color: white;
         font-size: .7rem;
         font-weight: 820;
+        line-height: 1;
       }
-      .cp-topbar-product {font-size: .9rem; font-weight: 780; line-height: 1.15;}
-      .cp-topbar-mode {font-size: .65rem; opacity: .58; margin-top: .14rem;}
+      .cp-topbar-copy {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: .14rem;
+        min-width: 0;
+        min-height: 2.1rem;
+      }
+      .cp-topbar-product {font-size: .9rem; font-weight: 780; line-height: 1;}
+      .cp-topbar-mode {font-size: .65rem; line-height: 1.1; opacity: .58;}
       [data-testid="stHorizontalBlock"]:has(.cp-topbar-brand) [data-testid="stPopover"] button {
         min-height: 2.5rem;
         white-space: nowrap;
@@ -1059,7 +1069,8 @@ brand_column, navigation_column, connection_column = st.columns(
 )
 with brand_column:
     st.markdown(
-        '<div class="cp-topbar-brand"><div class="cp-topbar-mark">CP</div><div>'
+        '<div class="cp-topbar-brand"><div class="cp-topbar-mark">CP</div>'
+        '<div class="cp-topbar-copy">'
         '<div class="cp-topbar-product">ControlPlane.ai</div>'
         '<div class="cp-topbar-mode">Stage 2 decision console</div>'
         "</div></div>",
