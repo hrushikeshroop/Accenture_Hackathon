@@ -384,6 +384,23 @@ def test_dashboard_uses_intentional_page_widths_and_vertical_candidate_flow():
     assert 'centered_workspace("feedback-workspace", 920)' in source
 
 
+def test_dashboard_uses_a_consistent_compact_typography_scale():
+    source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
+
+    for token in (
+        "--cp-type-micro",
+        "--cp-type-label",
+        "--cp-type-meta",
+        "--cp-type-copy",
+        "--cp-type-body",
+        "--cp-type-title",
+    ):
+        assert token in source
+    assert "clamp(1.5rem, 2vw, 1.9rem)" in source
+    assert "clamp(1.55rem, 2.4vw, 2.05rem)" in source
+    assert '[data-testid="stMetricValue"]' in source
+
+
 def test_dashboard_has_no_bare_conditional_expressions_for_streamlit_magic():
     source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
     tree = ast.parse(source)

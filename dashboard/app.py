@@ -46,6 +46,12 @@ st.markdown(
         --cp-red: #dc2626;
         --cp-border: rgba(128, 128, 128, .19);
         --cp-muted: rgba(128, 128, 128, .08);
+        --cp-type-micro: .625rem;
+        --cp-type-label: .7rem;
+        --cp-type-meta: .75rem;
+        --cp-type-copy: .875rem;
+        --cp-type-body: .9375rem;
+        --cp-type-title: 1.0625rem;
       }
       #MainMenu, footer {visibility: hidden;}
       header[data-testid="stHeader"] {background: transparent;}
@@ -111,6 +117,13 @@ st.markdown(
         border-radius: .75rem;
         padding: .75rem .9rem;
       }
+      [data-testid="stMetricLabel"] p {font-size: var(--cp-type-meta);}
+      [data-testid="stMetricValue"] {
+        font-size: 1.35rem;
+        line-height: 1.15;
+      }
+      [data-testid="stMain"] h3 {font-size: 1.2rem; line-height: 1.25;}
+      [data-testid="stMain"] h4 {font-size: 1rem; line-height: 1.3;}
       .stButton > button[kind="primary"] {
         min-height: 3.05rem;
         border: 0;
@@ -141,9 +154,9 @@ st.markdown(
       }
       .cp-hero h1 {
         margin: .12rem 0 .28rem 0;
-        font-size: clamp(1.65rem, 2.5vw, 2.25rem);
-        line-height: 1.08;
-        letter-spacing: -.035em;
+        font-size: clamp(1.5rem, 2vw, 1.9rem);
+        line-height: 1.12;
+        letter-spacing: -.03em;
       }
       .cp-hero-copy {max-width: 760px; opacity: .78; line-height: 1.55;}
       .cp-system-state {
@@ -183,8 +196,8 @@ st.markdown(
         font-size: .72rem;
         font-weight: 800;
       }
-      .cp-section-title {font-size: 1.08rem; font-weight: 760; letter-spacing: -.01em;}
-      .cp-section-subtitle {font-size: .75rem; opacity: .62; margin-top: .04rem;}
+      .cp-section-title {font-size: var(--cp-type-title); font-weight: 760; letter-spacing: -.01em;}
+      .cp-section-subtitle {font-size: var(--cp-type-meta); opacity: .68; margin-top: .08rem;}
       .cp-card {
         border: 1px solid var(--cp-border);
         border-radius: .85rem;
@@ -192,7 +205,7 @@ st.markdown(
         margin: .4rem 0 .8rem 0;
       }
       .cp-label {
-        font-size: .68rem;
+        font-size: var(--cp-type-label);
         opacity: .63;
         text-transform: uppercase;
         letter-spacing: .085em;
@@ -233,18 +246,18 @@ st.markdown(
         gap: .75rem;
         margin-bottom: .62rem;
       }
-      .cp-message-role {font-size: .72rem; font-weight: 760; letter-spacing: .035em;}
+      .cp-message-role {font-size: var(--cp-type-meta); font-weight: 760; letter-spacing: .03em;}
       .cp-message-chip {
         border-radius: 999px;
         padding: .16rem .43rem;
         background: rgba(128,128,128,.1);
-        font-size: .61rem;
+        font-size: var(--cp-type-micro);
         font-weight: 800;
         letter-spacing: .07em;
         opacity: .7;
       }
       .cp-message-body {
-        font-size: .94rem;
+        font-size: var(--cp-type-body);
         font-weight: 560;
         line-height: 1.56;
         overflow-wrap: anywhere;
@@ -268,7 +281,7 @@ st.markdown(
         padding: .22rem .52rem;
         border: 1px solid var(--cp-border);
         border-radius: 999px;
-        font-size: .69rem;
+        font-size: var(--cp-type-label);
         opacity: .72;
       }
       .cp-result-empty {
@@ -281,11 +294,11 @@ st.markdown(
         padding: 1.1rem;
         margin: .35rem 0 .8rem 0;
       }
-      .cp-result-empty-title {font-size: 1rem; font-weight: 760;}
+      .cp-result-empty-title {font-size: var(--cp-type-title); font-weight: 760;}
       .cp-result-empty-copy {
         max-width: 52ch;
         margin-top: .3rem;
-        font-size: .8rem;
+        font-size: var(--cp-type-copy);
         line-height: 1.48;
         opacity: .68;
       }
@@ -346,7 +359,7 @@ st.markdown(
         border: 1px solid currentColor;
         border-radius: 999px;
         padding: .2rem .5rem;
-        font-size: .62rem;
+        font-size: var(--cp-type-micro);
         font-weight: 820;
         letter-spacing: .07em;
         opacity: .72;
@@ -360,12 +373,12 @@ st.markdown(
       }
       .cp-decision-word {
         margin-top: .12rem;
-        font-size: clamp(1.65rem, 3vw, 2.35rem);
+        font-size: clamp(1.55rem, 2.4vw, 2.05rem);
         line-height: 1;
         font-weight: 830;
         letter-spacing: -.045em;
       }
-      .cp-decision-copy {margin-top: .48rem; max-width: 520px; font-size: .84rem; line-height: 1.45; opacity: .8;}
+      .cp-decision-copy {margin-top: .48rem; max-width: 520px; font-size: var(--cp-type-copy); line-height: 1.48; opacity: .82;}
       .cp-decision-kpis {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -378,12 +391,12 @@ st.markdown(
         border-radius: .66rem;
         padding: .52rem .58rem;
       }
-      .cp-decision-kpi-value {font-size: .84rem; font-weight: 760; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-decision-kpi-value {font-size: .82rem; font-weight: 760; margin-top: .12rem; overflow-wrap: anywhere;}
       .cp-decision-reason {
         margin-top: .78rem;
         padding-top: .68rem;
         border-top: 1px solid rgba(128,128,128,.16);
-        font-size: .79rem;
+        font-size: .82rem;
         line-height: 1.45;
       }
       .cp-route {
@@ -409,16 +422,16 @@ st.markdown(
         border-radius: .38rem;
         background: rgba(99,88,232,.1);
         color: #6558e8;
-        font-size: .6rem;
+        font-size: var(--cp-type-micro);
         font-weight: 820;
       }
       .cp-route-state {font-weight: 780; font-size: .86rem; margin-top: .28rem;}
-      .cp-route-detail {font-size: .74rem; opacity: .72; margin-top: .12rem;}
+      .cp-route-detail {font-size: var(--cp-type-meta); opacity: .74; margin-top: .12rem;}
       .cp-route-arrow {align-self: center; color: #6558e8; opacity: .42; font-size: 1.05rem;}
       .cp-route-step[data-state="SKIPPED"], .cp-route-step[data-state="NO CALL"] {opacity: .52; background: transparent;}
       .cp-route-step[data-state="CALLED"] {border-color: rgba(126,34,206,.32); background: rgba(126,34,206,.065);}
       .cp-route-step[data-label="Decision"] {border-color: rgba(8,145,178,.32); background: rgba(8,145,178,.055);}
-      .cp-route-note {font-size: .73rem; opacity: .65; margin: -.2rem 0 .45rem 0;}
+      .cp-route-note {font-size: var(--cp-type-meta); opacity: .68; margin: -.2rem 0 .45rem 0;}
       .cp-tradeoff {
         display: grid;
         grid-template-columns: .92fr 1.08fr;
@@ -432,8 +445,8 @@ st.markdown(
       .cp-tradeoff-copy {font-size: .78rem; line-height: 1.45; opacity: .74; margin-top: .23rem;}
       .cp-check-head {display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-top: .2rem;}
       .cp-check-counts {display: flex; flex-wrap: wrap; gap: .65rem; justify-content: flex-end;}
-      .cp-count-stat {font-size: .65rem; opacity: .64; white-space: nowrap;}
-      .cp-count-stat strong {font-size: .76rem; opacity: 1; margin-right: .12rem;}
+      .cp-count-stat {font-size: var(--cp-type-label); opacity: .68; white-space: nowrap;}
+      .cp-count-stat strong {font-size: .8rem; opacity: 1; margin-right: .12rem;}
       .cp-check-grid {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin: .55rem 0 .95rem 0;}
       .cp-check {
         min-width: 0;
@@ -443,7 +456,7 @@ st.markdown(
         background: rgba(128,128,128,.018);
       }
       .cp-check-top {display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem;}
-      .cp-check-title {font-size: .76rem; font-weight: 750; line-height: 1.28;}
+      .cp-check-title {font-size: .8rem; font-weight: 750; line-height: 1.3;}
       .cp-check-status {
         display: inline-flex;
         flex: 0 0 auto;
@@ -451,7 +464,7 @@ st.markdown(
         gap: .22rem;
         border-radius: .4rem;
         padding: .16rem .3rem;
-        font-size: .56rem;
+        font-size: var(--cp-type-micro);
         font-weight: 820;
         letter-spacing: .045em;
       }
@@ -461,7 +474,7 @@ st.markdown(
         width: .82rem;
         height: .82rem;
         border-radius: 50%;
-        font-size: .58rem;
+        font-size: var(--cp-type-micro);
         font-weight: 900;
       }
       .cp-check[data-status="PASS"] .cp-check-status {color: var(--cp-green); background: rgba(5,150,105,.09);}
@@ -476,17 +489,17 @@ st.markdown(
         padding-top: .48rem;
         border-top: 1px solid rgba(128,128,128,.12);
       }
-      .cp-check-metric-label {display: block; font-size: .55rem; text-transform: uppercase; letter-spacing: .06em; opacity: .5;}
-      .cp-check-metric-value {display: block; margin-top: .12rem; font-size: .64rem; font-weight: 680; overflow-wrap: anywhere;}
+      .cp-check-metric-label {display: block; font-size: var(--cp-type-micro); text-transform: uppercase; letter-spacing: .055em; opacity: .58;}
+      .cp-check-metric-value {display: block; margin-top: .12rem; font-size: var(--cp-type-label); font-weight: 680; overflow-wrap: anywhere;}
       .cp-check-reason {
         border-top: 1px solid rgba(128,128,128,.12);
-        font-size: .67rem;
+        font-size: .72rem;
         line-height: 1.42;
         margin-top: .48rem;
         padding-top: .42rem;
         opacity: .76;
       }
-      .cp-check-reason-label {font-size: .54rem; font-weight: 800; letter-spacing: .06em; opacity: .62; margin-right: .28rem;}
+      .cp-check-reason-label {font-size: var(--cp-type-micro); font-weight: 800; letter-spacing: .055em; opacity: .68; margin-right: .28rem;}
       .cp-review-panel {
         border: 1px solid rgba(217,119,6,.3);
         border-radius: .85rem;
@@ -509,7 +522,7 @@ st.markdown(
         border-radius: .42rem;
         padding: .2rem .42rem;
         color: var(--cp-amber);
-        font-size: .62rem;
+        font-size: var(--cp-type-micro);
         font-weight: 800;
       }
       .cp-review-state[data-status="REVIEWED"] {
@@ -528,10 +541,10 @@ st.markdown(
         padding-top: .48rem;
         min-width: 0;
       }
-      .cp-review-kpi-value {font-size: .74rem; font-weight: 720; margin-top: .12rem; overflow-wrap: anywhere;}
+      .cp-review-kpi-value {font-size: var(--cp-type-meta); font-weight: 720; margin-top: .12rem; overflow-wrap: anywhere;}
       .cp-review-reason {
         margin-top: .65rem;
-        font-size: .78rem;
+        font-size: .82rem;
         line-height: 1.48;
       }
       .cp-good {background: rgba(16,185,129,.11); border: 1px solid rgba(16,185,129,.32);}
