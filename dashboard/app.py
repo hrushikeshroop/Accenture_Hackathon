@@ -1161,7 +1161,7 @@ with connection_column:
     with st.popover("Connection", width="stretch"):
         API_URL = st.text_input(
             "Middleware API",
-            "http://localhost:8000",
+            "http://127.0.0.1:8000",
             key="middleware-api-url",
         ).rstrip("/")
         if st.button("Test middleware connection", width="stretch"):
