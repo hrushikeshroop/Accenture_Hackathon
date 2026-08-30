@@ -295,7 +295,7 @@ def test_dashboard_default_page_loads_without_api_call():
     app.run(timeout=15)
 
     assert not app.exception
-    assert app.subheader[0].value == "Evaluate a scenario"
+    assert not app.subheader
     assert len(app.selectbox) == 2
     assert list(app.selectbox[0].options) == [
         "Engineering · Production",
@@ -305,7 +305,14 @@ def test_dashboard_default_page_loads_without_api_call():
     ]
     assert len(app.selectbox[1].options) == 4
     assert any(
-        "AI candidate under review" in markdown.value for markdown in app.markdown
+        "Scenario and AI candidate" in markdown.value for markdown in app.markdown
+    )
+    assert any(
+        "Middleware verification result" in markdown.value
+        for markdown in app.markdown
+    )
+    assert any(
+        "No decision yet" in markdown.value for markdown in app.markdown
     )
     assert any(
         "Inspect the middleware decision for an AI output" in markdown.value
@@ -348,6 +355,8 @@ def test_dashboard_uses_centered_top_navigation():
     assert "Trust is a decision, not a default" not in source
     assert "st.segmented_control(" in source
     assert "st.radio(" not in source
+    assert "scenario_panel, result_panel = st.columns(" in source
+    assert "[0.9, 1.35]" in source
     assert list(app.segmented_control[0].options) == [
         "Run scenario",
         "Human review",

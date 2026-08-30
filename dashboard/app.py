@@ -251,6 +251,24 @@ st.markdown(
         font-size: .69rem;
         opacity: .72;
       }
+      .cp-result-empty {
+        display: grid;
+        align-content: center;
+        min-height: 12rem;
+        border: 1px dashed rgba(99,88,232,.28);
+        border-radius: .9rem;
+        background: rgba(99,88,232,.025);
+        padding: 1.1rem;
+        margin: .35rem 0 .8rem 0;
+      }
+      .cp-result-empty-title {font-size: 1rem; font-weight: 760;}
+      .cp-result-empty-copy {
+        max-width: 52ch;
+        margin-top: .3rem;
+        font-size: .8rem;
+        line-height: 1.48;
+        opacity: .68;
+      }
       .cp-summary-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1011,9 +1029,9 @@ def render_result(
     render_adaptive_route(result)
 
     if progressive:
-        render_result_overview(result)
         render_checker_summary(result.get("check_results", []))
         with st.expander("More decision details"):
+            render_result_overview(result)
             render_verification_trace(result)
             render_result_footer(result)
     else:
@@ -1091,10 +1109,6 @@ if review_flash:
     st.success(review_flash)
 
 if page == "Run scenario":
-    st.subheader("Evaluate a scenario")
-    st.caption(
-        "Select a prepared case, review its AI candidate, then run ControlPlane verification."
-    )
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
     scenario_signatures = tuple(
         (str(path), path.stat().st_mtime_ns) for path in scenario_paths
@@ -1109,155 +1123,182 @@ if page == "Run scenario":
             for payload in scenario_payloads.values()
         )
     }
-    group_column, scenario_column = st.columns([1, 2])
-    with group_column:
-        selected_group = st.selectbox("Scenario group", list(available_groups))
-    grouped_paths = [
-        path
-        for path, scenario_payload in scenario_payloads.items()
-        if scenario_payload.get("use_case") == available_groups[selected_group]
-    ]
-    with scenario_column:
-        selected = st.selectbox(
-            "Scenario",
-            grouped_paths,
-            format_func=lambda path: scenario_meta(path, PROJECT_ROOT)["title"],
-        )
-    meta = scenario_meta(selected, PROJECT_ROOT)
-    payload = scenario_payloads[selected]
-
-    request_key = next(
-        (
-            key
-            for key in ("question", "prompt", "request", "user_input", "input")
-            if isinstance(payload.get(key), str) and payload.get(key)
-        ),
-        None,
-    )
-    scenario_input = payload.get(request_key) if request_key else meta["prompt"]
-    preview = candidate_preview(payload)
-    st.markdown(
-        '<div class="cp-section-heading"><span class="cp-section-number">01</span><div>'
-        '<div class="cp-section-title">AI candidate under review</div>'
-        '<div class="cp-section-subtitle">The middleware receives both the original intent and the proposed output.</div>'
-        "</div></div>"
-        '<div class="cp-conversation">'
-        '<div class="cp-message"><div class="cp-message-head">'
-        '<span class="cp-message-role">Scenario request</span>'
-        '<span class="cp-message-chip">INPUT</span></div>'
-        f'<div class="cp-message-body">{html.escape(str(scenario_input))}</div></div>'
-        '<div class="cp-message-arrow">→</div>'
-        '<div class="cp-message cp-message-output"><div class="cp-message-head">'
-        f'<span class="cp-message-role">{html.escape(preview["label"])}</span>'
-        '<span class="cp-message-chip">CANDIDATE</span></div>'
-        f'<div class="cp-message-body">{html.escape(preview["body"])}</div></div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-    use_case_label = (
-        str(payload.get("use_case", "unknown"))
-        .replace(".", " / ")
-        .replace("_", " ")
-        .title()
-    )
-    event_label = str(payload.get("event_type", "unknown")).replace("_", " ").title()
-    st.markdown(
-        '<div class="cp-context-line"><span class="cp-label">Trusted context</span>'
-        f'<span class="cp-context-chip">{html.escape(use_case_label)}</span>'
-        f'<span class="cp-context-chip">{html.escape(event_label)}</span></div>',
-        unsafe_allow_html=True,
+    scenario_panel, result_panel = st.columns(
+        [0.9, 1.35], gap="large", vertical_alignment="top"
     )
 
-    actor = payload.get("actor", {})
-    context = payload.get("trusted_context", {})
-    candidate = payload.get("candidate", {})
-    with st.expander("More scenario details"):
-        st.markdown(f"**Purpose:** {meta['objective']}")
-        st.caption(
-            f"Expected decision: {meta['expected']} · "
-            f"Fixture: {selected.relative_to(PROJECT_ROOT).as_posix()}"
-        )
+    with scenario_panel:
         st.markdown(
-            compact_grid(
-                [
-                    ("Use case", payload.get("use_case", "—")),
-                    (
-                        "Event",
-                        str(payload.get("event_type", "—")).replace("_", " ").title(),
-                    ),
-                    ("Actor", actor.get("role", actor.get("id", "—"))),
-                    ("Environment", context.get("environment", "Customer support")),
-                ]
-            ),
-            unsafe_allow_html=True,
-        )
-        st.caption(
-            "Trusted context comes from the host application, not from the candidate model."
-        )
-        operation_bits = [candidate.get("tool"), candidate.get("operation")]
-        operation_bits = [str(item) for item in operation_bits if item]
-        if operation_bits:
-            st.markdown(
-                " ".join(
-                    pill(item.replace("_", " ").title()) for item in operation_bits
-                ),
-                unsafe_allow_html=True,
-            )
-        arguments = candidate.get("arguments", {})
-        if arguments:
-            st.dataframe(
-                key_value_rows(arguments), width="stretch", hide_index=True
-            )
-        claims = candidate.get("claims", [])
-        if claims:
-            st.markdown(f"**Structured claims ({len(claims)})**")
-            st.dataframe(
-                [
-                    {
-                        "Claim": claim.get("key", "—"),
-                        "Value": str(claim.get("value", "—")),
-                        "Text": claim.get("text", "—"),
-                    }
-                    for claim in claims
-                ],
-                width="stretch",
-                hide_index=True,
-            )
-        st.markdown("**Trusted application context**")
-        st.dataframe(key_value_rows(context), width="stretch", hide_index=True)
-
-    with st.expander("Raw scenario JSON"):
-        st.json(payload, expanded=False)
-
-    if st.button(
-        "Run middleware verification", type="primary", width="stretch"
-    ):
-        evaluation_payload = {
-            **payload,
-            "metadata": {
-                **payload.get("metadata", {}),
-                "request_text": scenario_input,
-                "scenario_title": meta["title"],
-            },
-        }
-        with st.spinner("Routing through the minimum policy checks required..."):
-            result = api_json("POST", "/evaluate", json=evaluation_payload, timeout=20)
-        st.session_state["last_result"] = result
-        st.session_state["last_scenario"] = str(selected)
-
-    if st.session_state.get("last_scenario") == str(selected):
-        st.markdown(
-            '<div class="cp-section-heading" style="margin-top:1.15rem;">'
-            '<span class="cp-section-number">02</span><div>'
-            '<div class="cp-section-title">Middleware verification result</div>'
-            '<div class="cp-section-subtitle">Decision, routing cost, and failure point at a glance.</div>'
+            '<div class="cp-section-heading"><span class="cp-section-number">01</span><div>'
+            '<div class="cp-section-title">Scenario and AI candidate</div>'
+            '<div class="cp-section-subtitle">Choose a prepared case and inspect the proposed output.</div>'
             "</div></div>",
             unsafe_allow_html=True,
         )
-        render_result(
-            st.session_state["last_result"],
-            progressive=True,
+        group_column, scenario_column = st.columns([1, 1.65], gap="small")
+        with group_column:
+            selected_group = st.selectbox("Scenario group", list(available_groups))
+        grouped_paths = [
+            path
+            for path, scenario_payload in scenario_payloads.items()
+            if scenario_payload.get("use_case") == available_groups[selected_group]
+        ]
+        with scenario_column:
+            selected = st.selectbox(
+                "Scenario",
+                grouped_paths,
+                format_func=lambda path: scenario_meta(path, PROJECT_ROOT)["title"],
+            )
+        meta = scenario_meta(selected, PROJECT_ROOT)
+        payload = scenario_payloads[selected]
+
+        request_key = next(
+            (
+                key
+                for key in ("question", "prompt", "request", "user_input", "input")
+                if isinstance(payload.get(key), str) and payload.get(key)
+            ),
+            None,
         )
+        scenario_input = payload.get(request_key) if request_key else meta["prompt"]
+        preview = candidate_preview(payload)
+        st.markdown(
+            '<div class="cp-conversation">'
+            '<div class="cp-message"><div class="cp-message-head">'
+            '<span class="cp-message-role">Scenario request</span>'
+            '<span class="cp-message-chip">INPUT</span></div>'
+            f'<div class="cp-message-body">{html.escape(str(scenario_input))}</div></div>'
+            '<div class="cp-message-arrow">→</div>'
+            '<div class="cp-message cp-message-output"><div class="cp-message-head">'
+            f'<span class="cp-message-role">{html.escape(preview["label"])}</span>'
+            '<span class="cp-message-chip">CANDIDATE</span></div>'
+            f'<div class="cp-message-body">{html.escape(preview["body"])}</div></div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        use_case_label = (
+            str(payload.get("use_case", "unknown"))
+            .replace(".", " / ")
+            .replace("_", " ")
+            .title()
+        )
+        event_label = (
+            str(payload.get("event_type", "unknown")).replace("_", " ").title()
+        )
+        st.markdown(
+            '<div class="cp-context-line"><span class="cp-label">Trusted context</span>'
+            f'<span class="cp-context-chip">{html.escape(use_case_label)}</span>'
+            f'<span class="cp-context-chip">{html.escape(event_label)}</span></div>',
+            unsafe_allow_html=True,
+        )
+
+        if st.button(
+            "Run middleware verification", type="primary", width="stretch"
+        ):
+            evaluation_payload = {
+                **payload,
+                "metadata": {
+                    **payload.get("metadata", {}),
+                    "request_text": scenario_input,
+                    "scenario_title": meta["title"],
+                },
+            }
+            with st.spinner("Routing through the minimum policy checks required..."):
+                result = api_json(
+                    "POST", "/evaluate", json=evaluation_payload, timeout=20
+                )
+            st.session_state["last_result"] = result
+            st.session_state["last_scenario"] = str(selected)
+
+        actor = payload.get("actor", {})
+        context = payload.get("trusted_context", {})
+        candidate = payload.get("candidate", {})
+        with st.expander("More scenario details"):
+            st.markdown(f"**Purpose:** {meta['objective']}")
+            st.caption(
+                f"Expected decision: {meta['expected']} · "
+                f"Fixture: {selected.relative_to(PROJECT_ROOT).as_posix()}"
+            )
+            st.markdown(
+                compact_grid(
+                    [
+                        ("Use case", payload.get("use_case", "—")),
+                        (
+                            "Event",
+                            str(payload.get("event_type", "—"))
+                            .replace("_", " ")
+                            .title(),
+                        ),
+                        ("Actor", actor.get("role", actor.get("id", "—"))),
+                        (
+                            "Environment",
+                            context.get("environment", "Customer support"),
+                        ),
+                    ]
+                ),
+                unsafe_allow_html=True,
+            )
+            st.caption(
+                "Trusted context comes from the host application, not from the candidate model."
+            )
+            operation_bits = [candidate.get("tool"), candidate.get("operation")]
+            operation_bits = [str(item) for item in operation_bits if item]
+            if operation_bits:
+                st.markdown(
+                    " ".join(
+                        pill(item.replace("_", " ").title())
+                        for item in operation_bits
+                    ),
+                    unsafe_allow_html=True,
+                )
+            arguments = candidate.get("arguments", {})
+            if arguments:
+                st.dataframe(
+                    key_value_rows(arguments), width="stretch", hide_index=True
+                )
+            claims = candidate.get("claims", [])
+            if claims:
+                st.markdown(f"**Structured claims ({len(claims)})**")
+                st.dataframe(
+                    [
+                        {
+                            "Claim": claim.get("key", "—"),
+                            "Value": str(claim.get("value", "—")),
+                            "Text": claim.get("text", "—"),
+                        }
+                        for claim in claims
+                    ],
+                    width="stretch",
+                    hide_index=True,
+                )
+            st.markdown("**Trusted application context**")
+            st.dataframe(key_value_rows(context), width="stretch", hide_index=True)
+
+        with st.expander("Raw scenario JSON"):
+            st.json(payload, expanded=False)
+
+    with result_panel:
+        st.markdown(
+            '<div class="cp-section-heading"><span class="cp-section-number">02</span><div>'
+            '<div class="cp-section-title">Middleware verification result</div>'
+            '<div class="cp-section-subtitle">Final action, latency, route, and checker outcomes.</div>'
+            "</div></div>",
+            unsafe_allow_html=True,
+        )
+        if st.session_state.get("last_scenario") == str(selected):
+            render_result(
+                st.session_state["last_result"],
+                progressive=True,
+            )
+        else:
+            st.markdown(
+                '<div class="cp-result-empty">'
+                '<div class="cp-result-empty-title">No decision yet</div>'
+                '<div class="cp-result-empty-copy">Run middleware verification to see '
+                "the final action, observed latency, routing path, and checker results here."
+                "</div></div>",
+                unsafe_allow_html=True,
+            )
 
 elif page == "Human review":
     st.subheader("Human review queue")
