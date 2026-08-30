@@ -206,6 +206,15 @@ st.markdown(
         gap: .4rem;
         margin: .35rem 0 .65rem 0;
       }
+      .cp-conversation-stacked {
+        grid-template-columns: minmax(0, 1fr);
+        gap: .28rem;
+      }
+      .cp-conversation-stacked .cp-message-arrow {
+        height: 1.35rem;
+        line-height: 1;
+        transform: rotate(90deg);
+      }
       .cp-message {
         min-width: 0;
         border: 1px solid var(--cp-border);
@@ -600,6 +609,17 @@ def load_scenario_payloads(
         path: json.loads(Path(path).read_text(encoding="utf-8"))
         for path, _modified_at in file_signatures
     }
+
+
+def centered_workspace(key: str, width: int):
+    """Create a centered page body without constraining the shared top bar."""
+    host = st.container(
+        key=f"{key}-host",
+        horizontal=True,
+        horizontal_alignment="center",
+        gap=None,
+    )
+    return host.container(key=key, width=width, gap="xsmall")
 
 
 def pill(value: Any) -> str:
@@ -1117,8 +1137,6 @@ st.markdown(
 )
 
 review_flash = st.session_state.pop("review_flash", None)
-if review_flash:
-    st.success(review_flash)
 
 if page == "Run scenario":
     scenario_paths = sorted((PROJECT_ROOT / "scenarios").glob("**/*.json"))
@@ -1175,7 +1193,7 @@ if page == "Run scenario":
         scenario_input = payload.get(request_key) if request_key else meta["prompt"]
         preview = candidate_preview(payload)
         st.markdown(
-            '<div class="cp-conversation">'
+            '<div class="cp-conversation cp-conversation-stacked">'
             '<div class="cp-message"><div class="cp-message-head">'
             '<span class="cp-message-role">Scenario request</span>'
             '<span class="cp-message-chip">INPUT</span></div>'
@@ -1313,8 +1331,11 @@ if page == "Run scenario":
             )
 
 elif page == "Human review":
-    st.subheader("Human review queue")
-    st.caption(
+    human_review_page = centered_workspace("human-review-workspace", 1380)
+    if review_flash:
+        human_review_page.success(review_flash)
+    human_review_page.subheader("Human review queue")
+    human_review_page.caption(
         "Escalated candidates remain held here with the redacted context a reviewer "
         "needs to record a disposition."
     )
@@ -1333,17 +1354,17 @@ elif page == "Human review":
     reviewed_count = sum(
         1 for record in escalations if record["evaluation_id"] in latest_reviews
     )
-    queue_metrics = st.columns(3)
+    queue_metrics = human_review_page.columns(3)
     queue_metrics[0].metric("Escalated cases", len(escalations))
     queue_metrics[1].metric("Pending review", len(escalations) - reviewed_count)
     queue_metrics[2].metric("Reviewed", reviewed_count)
 
     if not escalations:
-        st.info(
+        human_review_page.info(
             "No human-review cases are waiting. Run an ESCALATE scenario to create one."
         )
     else:
-        queue_view = st.selectbox(
+        queue_view = human_review_page.selectbox(
             "Queue view",
             ["Pending", "Reviewed", "All"],
             key="human-review-queue-view",
@@ -1368,11 +1389,11 @@ elif page == "Human review":
                 else f"No {queue_view.lower()} escalation cases are available."
             )
             if queue_view == "Pending":
-                st.success(message)
+                human_review_page.success(message)
             else:
-                st.info(message)
+                human_review_page.info(message)
         else:
-            selected_evaluation = st.selectbox(
+            selected_evaluation = human_review_page.selectbox(
                 "Open escalation case",
                 [record["evaluation_id"] for record in visible_escalations],
                 format_func=lambda evaluation_id: next(
@@ -1390,24 +1411,26 @@ elif page == "Human review":
                 for record in visible_escalations
                 if record["evaluation_id"] == selected_evaluation
             )
-            render_human_review_handoff(
-                selected_record["result"],
-                event=selected_record["event"],
-                created_at=selected_record.get("created_at"),
-                latest_review=latest_reviews.get(selected_evaluation),
-                key_scope="queue",
-            )
-            with st.expander("Raw redacted escalation record"):
-                st.json(selected_record, expanded=False)
+            with human_review_page:
+                render_human_review_handoff(
+                    selected_record["result"],
+                    event=selected_record["event"],
+                    created_at=selected_record.get("created_at"),
+                    latest_review=latest_reviews.get(selected_evaluation),
+                    key_scope="queue",
+                )
+                with st.expander("Raw redacted escalation record"):
+                    st.json(selected_record, expanded=False)
 
 elif page == "Audit trail":
-    st.subheader("Audit trail")
-    st.caption(
+    audit_page = centered_workspace("audit-workspace", 1440)
+    audit_page.subheader("Audit trail")
+    audit_page.caption(
         "Every decision retains its policy, evidence, checks, stop reason, and redacted input."
     )
     records = api_json("GET", "/evaluations")
     if not records:
-        st.info("No audit records yet. Run a scenario first.")
+        audit_page.info("No audit records yet. Run a scenario first.")
     else:
         overview = [
             {
@@ -1421,8 +1444,8 @@ elif page == "Audit trail":
             }
             for row in records
         ]
-        st.dataframe(overview, width="stretch", hide_index=True)
-        selected_id = st.selectbox(
+        audit_page.dataframe(overview, width="stretch", hide_index=True)
+        selected_id = audit_page.selectbox(
             "Inspect evaluation",
             [row["evaluation_id"] for row in records],
             format_func=lambda evaluation_id: next(
@@ -1434,26 +1457,28 @@ elif page == "Audit trail":
         selected_record = next(
             row for row in records if row["evaluation_id"] == selected_id
         )
-        st.markdown("#### Stored decision")
-        render_result(selected_record["result"], include_raw=False)
-        with st.expander("Redacted audited input"):
-            st.json(selected_record["event"], expanded=False)
-        with st.expander("Complete audit record"):
-            st.json(selected_record, expanded=False)
+        with audit_page:
+            st.markdown("#### Stored decision")
+            render_result(selected_record["result"], include_raw=False)
+            with st.expander("Redacted audited input"):
+                st.json(selected_record["event"], expanded=False)
+            with st.expander("Complete audit record"):
+                st.json(selected_record, expanded=False)
 
 elif page == "Policies":
-    st.subheader("Versioned policy profiles")
-    st.caption(
+    policies_page = centered_workspace("policies-workspace", 1320)
+    policies_page.subheader("Versioned policy profiles")
+    policies_page.caption(
         "Checks, evidence sources, and vetoes vary by AI use case."
     )
     policies = api_json("GET", "/policies")
     if not policies:
-        st.info(
+        policies_page.info(
             "No policy profiles are available. Check the middleware policy directory "
             "and restart the API."
         )
         st.stop()
-    st.dataframe(
+    policies_page.dataframe(
         [
             {
                 "Policy": policy["policy_id"],
@@ -1468,7 +1493,7 @@ elif page == "Policies":
         width="stretch",
         hide_index=True,
     )
-    selected_policy_id = st.selectbox(
+    selected_policy_id = policies_page.selectbox(
         "Inspect policy",
         range(len(policies)),
         format_func=lambda index: (
@@ -1476,7 +1501,7 @@ elif page == "Policies":
         ),
     )
     policy = policies[selected_policy_id]
-    left, right = st.columns([1.05, 0.95])
+    left, right = policies_page.columns([1.05, 0.95])
     with left:
         st.markdown("#### Checks by risk tier")
         st.dataframe(
@@ -1506,21 +1531,22 @@ elif page == "Policies":
         )
     veto_rows = policy_veto_rows(policy.get("veto_rules", []))
     if veto_rows:
-        st.markdown("#### Non-negotiable vetoes")
-        st.dataframe(veto_rows, width="stretch", hide_index=True)
-    with st.expander("Raw policy configuration"):
+        policies_page.markdown("#### Non-negotiable vetoes")
+        policies_page.dataframe(veto_rows, width="stretch", hide_index=True)
+    with policies_page.expander("Raw policy configuration"):
         st.json(policy, expanded=False)
 
 elif page == "Metrics":
-    st.subheader("Operational metrics")
-    st.caption("Bounded PoC telemetry from the current local audit database.")
+    metrics_page = centered_workspace("metrics-workspace", 1320)
+    metrics_page.subheader("Operational metrics")
+    metrics_page.caption("Bounded PoC telemetry from the current local audit database.")
     metrics = api_json("GET", "/metrics")
-    top = st.columns(4)
+    top = metrics_page.columns(4)
     top[0].metric("Evaluations", metrics["total_evaluations"])
     top[1].metric("Average latency", f"{metrics['average_latency_ms']:.2f} ms")
     top[2].metric("Average checks", f"{metrics['average_checks_executed']:.2f}")
     top[3].metric("External/model calls", metrics["total_model_calls"])
-    left, right = st.columns(2)
+    left, right = metrics_page.columns(2)
     with left:
         st.markdown("#### Decisions")
         if metrics["decisions"]:
@@ -1533,19 +1559,19 @@ elif page == "Metrics":
             st.bar_chart(metrics["stop_reasons"])
         else:
             st.info("No stopping-reason data yet.")
-    st.markdown("#### Use-case breakdown")
+    metrics_page.markdown("#### Use-case breakdown")
     use_case_rows = use_case_metric_rows(metrics["by_use_case"])
     if use_case_rows:
-        st.dataframe(use_case_rows, width="stretch", hide_index=True)
+        metrics_page.dataframe(use_case_rows, width="stretch", hide_index=True)
     else:
-        st.caption("No use-case data yet.")
-    bottom = st.columns(3)
+        metrics_page.caption("No use-case data yet.")
+    bottom = metrics_page.columns(3)
     bottom[0].metric("Average cost units", f"{metrics['average_cost_units']:.2f}")
     bottom[1].metric("Reviewer feedback", metrics["feedback_count"])
     bottom[2].metric("Feedback categories", len(metrics["feedback_labels"]))
     if metrics["feedback_labels"]:
-        st.markdown("#### Feedback labels")
-        st.dataframe(
+        metrics_page.markdown("#### Feedback labels")
+        metrics_page.dataframe(
             [
                 {"Label": label, "Count": count}
                 for label, count in metrics["feedback_labels"].items()
@@ -1555,15 +1581,16 @@ elif page == "Metrics":
         )
 
 else:
-    st.subheader("Reviewer feedback")
-    st.caption(
+    feedback_page = centered_workspace("feedback-workspace", 920)
+    feedback_page.subheader("Reviewer feedback")
+    feedback_page.caption(
         "Human labels inform offline calibration; they do not silently rewrite policy."
     )
     records = api_json("GET", "/evaluations")
     if not records:
-        st.info("Run at least one scenario before recording feedback.")
+        feedback_page.info("Run at least one scenario before recording feedback.")
     else:
-        evaluation_id = st.selectbox(
+        evaluation_id = feedback_page.selectbox(
             "Evaluation",
             [record["evaluation_id"] for record in records],
             format_func=lambda record_id: next(
@@ -1572,16 +1599,16 @@ else:
                 if record["evaluation_id"] == record_id
             ),
         )
-        reviewer_id = st.text_input("Reviewer ID", "demo-reviewer")
-        label = st.selectbox(
+        reviewer_id = feedback_page.text_input("Reviewer ID", "demo-reviewer")
+        label = feedback_page.selectbox(
             "Label", ["CORRECT", "INCORRECT", "FALSE_POSITIVE", "UNSAFE_ESCAPE"]
         )
-        reason = st.text_area(
+        reason = feedback_page.text_area(
             "Reason", placeholder="Explain why this label is appropriate."
         )
-        if st.button("Record feedback", type="primary", width="stretch"):
+        if feedback_page.button("Record feedback", type="primary", width="stretch"):
             if not reviewer_id.strip() or not reason.strip():
-                st.warning(
+                feedback_page.warning(
                     "Reviewer ID and a short reason are required in the demo console."
                 )
             else:
@@ -1595,4 +1622,6 @@ else:
                         "reason": reason,
                     },
                 )
-                st.success("Feedback recorded for offline calibration and monitoring.")
+                feedback_page.success(
+                    "Feedback recorded for offline calibration and monitoring."
+                )

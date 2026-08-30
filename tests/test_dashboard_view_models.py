@@ -369,6 +369,19 @@ def test_dashboard_uses_centered_top_navigation():
     ]
 
 
+def test_dashboard_uses_intentional_page_widths_and_vertical_candidate_flow():
+    source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
+
+    assert 'class="cp-conversation cp-conversation-stacked"' in source
+    assert source.count('class="cp-conversation cp-conversation-stacked"') == 1
+    assert ".cp-conversation-stacked" in source
+    assert 'centered_workspace("human-review-workspace", 1380)' in source
+    assert 'centered_workspace("audit-workspace", 1440)' in source
+    assert 'centered_workspace("policies-workspace", 1320)' in source
+    assert 'centered_workspace("metrics-workspace", 1320)' in source
+    assert 'centered_workspace("feedback-workspace", 920)' in source
+
+
 def test_dashboard_has_no_bare_conditional_expressions_for_streamlit_magic():
     source = (PROJECT_ROOT / "dashboard" / "app.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
