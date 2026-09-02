@@ -881,9 +881,7 @@ def render_result_overview(result: dict[str, Any]) -> None:
     else:
         st.caption("No additional decision reason was recorded.")
 
-    if result.get("sanitized_output") is not None:
-        st.markdown("#### Safe output released by ControlPlane")
-        st.success(result["sanitized_output"])
+
 
     guidance = result.get("action_guidance", {})
     if guidance.get("retryable"):
@@ -1108,6 +1106,10 @@ def render_result(
 ) -> None:
     render_decision_banner(result)
     render_adaptive_route(result)
+
+    if result.get("sanitized_output") is not None:
+        st.markdown("#### Safe output released by ControlPlane")
+        st.success(result["sanitized_output"])
 
     if progressive:
         render_checker_summary(result.get("check_results", []))
