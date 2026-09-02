@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Patch the run script to bind to 0.0.0.0 so ports are accessible from outside the container
-RUN sed -i 's/"127.0.0.1"/"0.0.0.0"/g' scripts/run_demo.py
+RUN sed -i 's/127\.0\.0\.1/0.0.0.0/g' scripts/run_demo.py
 
 # Expose Streamlit and API ports
 EXPOSE 8501 8000
